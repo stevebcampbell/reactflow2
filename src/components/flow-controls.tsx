@@ -41,6 +41,15 @@ export interface FlowControlsProps {
   onPanelEnabledChange?: (enabled: boolean) => void;
   panelPosition?: 'top-left' | 'top-center' | 'top-right' | 'bottom-left' | 'bottom-center' | 'bottom-right';
   onPanelPositionChange?: (position: string) => void;
+  baseEdgeConfig?: {
+    labelBgEnabled: boolean;
+    labelBgPadding: number;
+    labelBgBorderRadius: number;
+    interactionWidth: number;
+    edgeType: 'straight' | 'bezier' | 'step' | 'smoothstep';
+    animated: boolean;
+  };
+  onBaseEdgeConfigChange?: (config: any) => void;
 }
 
 function FlowControls({ 
@@ -61,7 +70,16 @@ function FlowControls({
   panelEnabled = false,
   onPanelEnabledChange,
   panelPosition = 'top-right',
-  onPanelPositionChange
+  onPanelPositionChange,
+  baseEdgeConfig = {
+    labelBgEnabled: true,
+    labelBgPadding: 5,
+    labelBgBorderRadius: 3,
+    interactionWidth: 20,
+    edgeType: 'bezier',
+    animated: false
+  },
+  onBaseEdgeConfigChange
 }: FlowControlsProps) {
   return (
     <div className="w-80 border-r bg-white dark:bg-slate-900 p-4 space-y-4 h-full overflow-y-auto">
@@ -378,6 +396,142 @@ function FlowControls({
                   </div>
                 </div>
               )}
+            </div>
+          </AccordionContent>
+        </AccordionItem>
+
+        {/* BaseEdge Configuration Section */}
+        <AccordionItem value="baseedge" className="border rounded-lg bg-white dark:bg-slate-800">
+          <AccordionTrigger className="px-4 py-3 hover:no-underline">
+            <div className="flex items-center gap-3">
+              <span className="text-lg">〰️</span>
+              <div className="flex-1 text-left">
+                <span className="font-semibold text-black dark:text-white">Edge Configuration</span>
+                <div className="text-xs text-gray-500 dark:text-gray-400">BaseEdge styling & behavior</div>
+              </div>
+              {baseEdgeConfig.animated && <Badge variant="default" className="bg-blue-600 text-white text-xs">Animated</Badge>}
+            </div>
+          </AccordionTrigger>
+          <AccordionContent className="px-4 pb-4">
+            <div className="space-y-4">
+              {/* Edge Type Selection */}
+              <div className="space-y-2">
+                <Label className="text-xs font-medium">Edge Type</Label>
+                <RadioGroup value={baseEdgeConfig.edgeType} onValueChange={(value) => onBaseEdgeConfigChange?.({...baseEdgeConfig, edgeType: value})}>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="flex items-center space-x-1">
+                      <RadioGroupItem value="straight" id="edge-straight" />
+                      <Label htmlFor="edge-straight" className="text-xs cursor-pointer">Straight</Label>
+                    </div>
+                    <div className="flex items-center space-x-1">
+                      <RadioGroupItem value="bezier" id="edge-bezier" />
+                      <Label htmlFor="edge-bezier" className="text-xs cursor-pointer">Bezier</Label>
+                    </div>
+                    <div className="flex items-center space-x-1">
+                      <RadioGroupItem value="step" id="edge-step" />
+                      <Label htmlFor="edge-step" className="text-xs cursor-pointer">Step</Label>
+                    </div>
+                    <div className="flex items-center space-x-1">
+                      <RadioGroupItem value="smoothstep" id="edge-smoothstep" />
+                      <Label htmlFor="edge-smoothstep" className="text-xs cursor-pointer">Smooth Step</Label>
+                    </div>
+                  </div>
+                </RadioGroup>
+              </div>
+
+              {/* Animated Toggle */}
+              <div className="flex items-center justify-between">
+                <Label htmlFor="edge-animated" className="text-xs">Animated Edges</Label>
+                <Switch
+                  id="edge-animated"
+                  checked={baseEdgeConfig.animated}
+                  onCheckedChange={(checked) => onBaseEdgeConfigChange?.({...baseEdgeConfig, animated: checked})}
+                  className="scale-75"
+                />
+              </div>
+
+              {/* Label Background Options */}
+              <div className="space-y-3 border-t pt-3">
+                <div className="text-xs font-medium text-gray-700 dark:text-gray-300">Label Background</div>
+                
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="edge-label-bg" className="text-xs">Show Background</Label>
+                  <Switch
+                    id="edge-label-bg"
+                    checked={baseEdgeConfig.labelBgEnabled}
+                    onCheckedChange={(checked) => onBaseEdgeConfigChange?.({...baseEdgeConfig, labelBgEnabled: checked})}
+                    className="scale-75"
+                  />
+                </div>
+
+                {baseEdgeConfig.labelBgEnabled && (
+                  <div className="space-y-2 ml-2">
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="edge-label-padding" className="text-xs">Padding</Label>
+                      <div className="flex items-center gap-2">
+                        <input
+                          id="edge-label-padding"
+                          type="range"
+                          min="0"
+                          max="20"
+                          value={baseEdgeConfig.labelBgPadding}
+                          onChange={(e) => onBaseEdgeConfigChange?.({...baseEdgeConfig, labelBgPadding: Number(e.target.value)})}
+                          className="w-20 h-1 bg-gray-300 rounded-lg appearance-none cursor-pointer"
+                        />
+                        <span className="text-xs text-gray-600 dark:text-gray-400 w-6">{baseEdgeConfig.labelBgPadding}</span>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="edge-label-radius" className="text-xs">Border Radius</Label>
+                      <div className="flex items-center gap-2">
+                        <input
+                          id="edge-label-radius"
+                          type="range"
+                          min="0"
+                          max="10"
+                          value={baseEdgeConfig.labelBgBorderRadius}
+                          onChange={(e) => onBaseEdgeConfigChange?.({...baseEdgeConfig, labelBgBorderRadius: Number(e.target.value)})}
+                          className="w-20 h-1 bg-gray-300 rounded-lg appearance-none cursor-pointer"
+                        />
+                        <span className="text-xs text-gray-600 dark:text-gray-400 w-6">{baseEdgeConfig.labelBgBorderRadius}</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Interaction Width */}
+              <div className="space-y-2 border-t pt-3">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="edge-interaction" className="text-xs">Interaction Width</Label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      id="edge-interaction"
+                      type="range"
+                      min="1"
+                      max="50"
+                      value={baseEdgeConfig.interactionWidth}
+                      onChange={(e) => onBaseEdgeConfigChange?.({...baseEdgeConfig, interactionWidth: Number(e.target.value)})}
+                      className="w-20 h-1 bg-gray-300 rounded-lg appearance-none cursor-pointer"
+                    />
+                    <span className="text-xs text-gray-600 dark:text-gray-400 w-8">{baseEdgeConfig.interactionWidth}px</span>
+                  </div>
+                </div>
+                <div className="text-xs text-gray-500 dark:text-gray-400">
+                  Invisible area around edges for easier interaction
+                </div>
+              </div>
+
+              {/* Info Box */}
+              <div className="bg-blue-50 dark:bg-blue-900/20 p-2 rounded-lg border border-blue-200 dark:border-blue-800">
+                <div className="text-xs text-blue-700 dark:text-blue-300">
+                  <div className="font-semibold mb-1">BaseEdge Properties:</div>
+                  <div>• Controls edge path rendering</div>
+                  <div>• Handles label positioning</div>
+                  <div>• Manages interaction areas</div>
+                </div>
+              </div>
             </div>
           </AccordionContent>
         </AccordionItem>

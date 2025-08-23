@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import {
   ReactFlow,
   Controls,
@@ -39,7 +39,20 @@ const initialNodes: Node[] = [
   },
 ];
 
-const initialEdges: Edge[] = [];
+const initialEdges: Edge[] = [
+  {
+    id: 'e1-2',
+    source: 'n1',
+    target: 'n2',
+    label: 'Edge 1→2',
+  },
+  {
+    id: 'e2-3',
+    source: 'n2',
+    target: 'n3',
+    label: 'Edge 2→3',
+  },
+];
 
 // Design tool viewport controls (for middle/right mouse drag)
 const designToolPanOnDrag = [1, 2];
@@ -62,6 +75,14 @@ interface FlowProps {
   backgroundVariant?: 'dots' | 'lines' | 'cross';
   panelEnabled?: boolean;
   panelPosition?: 'top-left' | 'top-center' | 'top-right' | 'bottom-left' | 'bottom-center' | 'bottom-right';
+  baseEdgeConfig?: {
+    labelBgEnabled: boolean;
+    labelBgPadding: number;
+    labelBgBorderRadius: number;
+    interactionWidth: number;
+    edgeType: 'straight' | 'bezier' | 'step' | 'smoothstep';
+    animated: boolean;
+  };
 }
 
 const nodeColor = (node: Node) => {
@@ -84,10 +105,37 @@ function Flow({
   backgroundEnabled = true,
   backgroundVariant = 'dots',
   panelEnabled = false,
-  panelPosition = 'top-right'
+  panelPosition = 'top-right',
+  baseEdgeConfig = {
+    labelBgEnabled: true,
+    labelBgPadding: 5,
+    labelBgBorderRadius: 3,
+    interactionWidth: 20,
+    edgeType: 'bezier',
+    animated: false
+  }
 }: FlowProps) {
   const [nodes, setNodes] = useState<Node[]>(initialNodes);
   const [edges, setEdges] = useState<Edge[]>(initialEdges);
+
+  // Update edges when baseEdgeConfig changes
+  useEffect(() => {
+    setEdges(currentEdges => 
+      currentEdges.map(edge => ({
+        ...edge,
+        type: baseEdgeConfig.edgeType,
+        animated: baseEdgeConfig.animated,
+        labelShowBg: baseEdgeConfig.labelBgEnabled,
+        labelBgStyle: baseEdgeConfig.labelBgEnabled ? {
+          fill: 'white',
+          fillOpacity: 0.9,
+        } : undefined,
+        labelBgPadding: baseEdgeConfig.labelBgEnabled ? [baseEdgeConfig.labelBgPadding, baseEdgeConfig.labelBgPadding] as [number, number] : undefined,
+        labelBgBorderRadius: baseEdgeConfig.labelBgEnabled ? baseEdgeConfig.labelBgBorderRadius : undefined,
+        interactionWidth: baseEdgeConfig.interactionWidth,
+      }))
+    );
+  }, [baseEdgeConfig]);
 
   const onNodesChange = useCallback(
     (changes: NodeChange[]) =>

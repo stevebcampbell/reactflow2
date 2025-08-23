@@ -34,6 +34,16 @@ export default function HaloMapPage() {
   // Panel state
   const [panelEnabled, setPanelEnabled] = useState(false);
   const [panelPosition, setPanelPosition] = useState<'top-left' | 'top-center' | 'top-right' | 'bottom-left' | 'bottom-center' | 'bottom-right'>('top-right');
+  
+  // BaseEdge state
+  const [baseEdgeConfig, setBaseEdgeConfig] = useState({
+    labelBgEnabled: true,
+    labelBgPadding: 5,
+    labelBgBorderRadius: 3,
+    interactionWidth: 20,
+    edgeType: 'bezier' as 'straight' | 'bezier' | 'step' | 'smoothstep',
+    animated: false
+  });
 
   return (
     <div className="h-[calc(100vh-3.5rem)] flex">
@@ -57,6 +67,8 @@ export default function HaloMapPage() {
         onPanelEnabledChange={setPanelEnabled}
         panelPosition={panelPosition}
         onPanelPositionChange={(pos) => setPanelPosition(pos as any)}
+        baseEdgeConfig={baseEdgeConfig}
+        onBaseEdgeConfigChange={setBaseEdgeConfig}
       />      {/* Main Flow Area */}
       <div className="flex-1 relative">
         <div className="absolute inset-0">
@@ -70,6 +82,7 @@ export default function HaloMapPage() {
             backgroundVariant={backgroundVariant}
             panelEnabled={panelEnabled}
             panelPosition={panelPosition}
+            baseEdgeConfig={baseEdgeConfig}
           />
         </div>
 
