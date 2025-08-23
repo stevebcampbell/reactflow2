@@ -50,6 +50,14 @@ export interface FlowControlsProps {
     animated: boolean;
   };
   onBaseEdgeConfigChange?: (config: any) => void;
+  customControlButtons?: Array<{
+    id: string;
+    label: string;
+    icon: string;
+    enabled: boolean;
+    position: 'before' | 'after';
+  }>;
+  onCustomControlButtonsChange?: (buttons: any[]) => void;
 }
 
 function FlowControls({ 
@@ -79,7 +87,13 @@ function FlowControls({
     edgeType: 'bezier',
     animated: false
   },
-  onBaseEdgeConfigChange
+  onBaseEdgeConfigChange,
+  customControlButtons = [
+    { id: '1', label: 'Magic', icon: '✨', enabled: false, position: 'after' as const },
+    { id: '2', label: 'Reset', icon: '🔄', enabled: false, position: 'after' as const },
+    { id: '3', label: 'Save', icon: '💾', enabled: false, position: 'before' as const }
+  ],
+  onCustomControlButtonsChange
 }: FlowControlsProps) {
   return (
     <div className="w-80 border-r bg-white dark:bg-slate-900 p-4 space-y-4 h-full overflow-y-auto">
@@ -530,6 +544,144 @@ function FlowControls({
                   <div>• Controls edge path rendering</div>
                   <div>• Handles label positioning</div>
                   <div>• Manages interaction areas</div>
+                </div>
+              </div>
+            </div>
+          </AccordionContent>
+        </AccordionItem>
+
+        {/* ControlButton Configuration Section */}
+        <AccordionItem value="controlbutton" className="border rounded-lg bg-white dark:bg-slate-800">
+          <AccordionTrigger className="px-4 py-3 hover:no-underline">
+            <div className="flex items-center gap-3">
+              <span className="text-lg">🔘</span>
+              <div className="flex-1 text-left">
+                <span className="font-semibold text-black dark:text-white">Control Buttons</span>
+                <div className="text-xs text-gray-500 dark:text-gray-400">Custom control panel buttons</div>
+              </div>
+              {customControlButtons.filter(b => b.enabled).length > 0 && (
+                <Badge variant="default" className="bg-purple-600 text-white text-xs">
+                  {customControlButtons.filter(b => b.enabled).length} Active
+                </Badge>
+              )}
+            </div>
+          </AccordionTrigger>
+          <AccordionContent className="px-4 pb-4">
+            <div className="space-y-4">
+              <div className="text-xs text-gray-600 dark:text-gray-300 mb-3">
+                Add custom buttons to the Controls panel. Toggle to enable/disable each button.
+              </div>
+
+              {/* Custom Button List */}
+              <div className="space-y-3">
+                {customControlButtons.map((button, index) => (
+                  <div key={button.id} className="border rounded-lg p-3 bg-gray-50 dark:bg-slate-700/50">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        <span className="text-lg">{button.icon}</span>
+                        <span className="text-sm font-medium text-black dark:text-white">{button.label}</span>
+                      </div>
+                      <Switch
+                        checked={button.enabled}
+                        onCheckedChange={(checked) => {
+                          const newButtons = [...customControlButtons];
+                          newButtons[index] = { ...button, enabled: checked };
+                          onCustomControlButtonsChange?.(newButtons);
+                        }}
+                      />
+                    </div>
+                    
+                    {button.enabled && (
+                      <div className="mt-3 space-y-2 pl-7">
+                        {/* Position Selection */}
+                        <div className="flex items-center justify-between">
+                          <Label className="text-xs">Position</Label>
+                          <RadioGroup 
+                            value={button.position} 
+                            onValueChange={(value) => {
+                              const newButtons = [...customControlButtons];
+                              newButtons[index] = { ...button, position: value as 'before' | 'after' };
+                              onCustomControlButtonsChange?.(newButtons);
+                            }}
+                            className="flex gap-3"
+                          >
+                            <div className="flex items-center space-x-1">
+                              <RadioGroupItem value="before" id={`pos-before-${button.id}`} />
+                              <Label htmlFor={`pos-before-${button.id}`} className="text-xs cursor-pointer">Before</Label>
+                            </div>
+                            <div className="flex items-center space-x-1">
+                              <RadioGroupItem value="after" id={`pos-after-${button.id}`} />
+                              <Label htmlFor={`pos-after-${button.id}`} className="text-xs cursor-pointer">After</Label>
+                            </div>
+                          </RadioGroup>
+                        </div>
+                        
+                        {/* Icon Editor */}
+                        <div className="flex items-center justify-between">
+                          <Label htmlFor={`icon-${button.id}`} className="text-xs">Icon</Label>
+                          <input
+                            id={`icon-${button.id}`}
+                            type="text"
+                            value={button.icon}
+                            onChange={(e) => {
+                              const newButtons = [...customControlButtons];
+                              newButtons[index] = { ...button, icon: e.target.value };
+                              onCustomControlButtonsChange?.(newButtons);
+                            }}
+                            className="w-16 px-2 py-1 text-xs border rounded bg-white dark:bg-slate-800 text-center"
+                            maxLength={2}
+                          />
+                        </div>
+                        
+                        {/* Label Editor */}
+                        <div className="flex items-center justify-between">
+                          <Label htmlFor={`label-${button.id}`} className="text-xs">Label</Label>
+                          <input
+                            id={`label-${button.id}`}
+                            type="text"
+                            value={button.label}
+                            onChange={(e) => {
+                              const newButtons = [...customControlButtons];
+                              newButtons[index] = { ...button, label: e.target.value };
+                              onCustomControlButtonsChange?.(newButtons);
+                            }}
+                            className="w-24 px-2 py-1 text-xs border rounded bg-white dark:bg-slate-800"
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              {/* Add New Button */}
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full"
+                onClick={() => {
+                  const newButton = {
+                    id: Date.now().toString(),
+                    label: 'New Button',
+                    icon: '🔵',
+                    enabled: false,
+                    position: 'after' as const
+                  };
+                  onCustomControlButtonsChange?.([...customControlButtons, newButton]);
+                }}
+              >
+                <span className="mr-2">➕</span>
+                Add Custom Button
+              </Button>
+
+              {/* Info Box */}
+              <div className="bg-purple-50 dark:bg-purple-900/20 p-2 rounded-lg border border-purple-200 dark:border-purple-800">
+                <div className="text-xs text-purple-700 dark:text-purple-300">
+                  <div className="font-semibold mb-1">ControlButton Usage:</div>
+                  <div>• Adds custom actions to Controls panel</div>
+                  <div>• Position before/after default buttons</div>
+                  <div>• Customize icon and label</div>
+                  <div>• Click handlers defined in code</div>
                 </div>
               </div>
             </div>

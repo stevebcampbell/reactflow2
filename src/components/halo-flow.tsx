@@ -4,6 +4,7 @@ import { useState, useCallback, useEffect } from 'react';
 import {
   ReactFlow,
   Controls,
+  ControlButton,
   Background,
   MiniMap,
   Panel,
@@ -83,6 +84,13 @@ interface FlowProps {
     edgeType: 'straight' | 'bezier' | 'step' | 'smoothstep';
     animated: boolean;
   };
+  customControlButtons?: Array<{
+    id: string;
+    label: string;
+    icon: string;
+    enabled: boolean;
+    position: 'before' | 'after';
+  }>;
 }
 
 const nodeColor = (node: Node) => {
@@ -113,7 +121,8 @@ function Flow({
     interactionWidth: 20,
     edgeType: 'bezier',
     animated: false
-  }
+  },
+  customControlButtons = []
 }: FlowProps) {
   const [nodes, setNodes] = useState<Node[]>(initialNodes);
   const [edges, setEdges] = useState<Edge[]>(initialEdges);
@@ -196,7 +205,62 @@ function Flow({
             showZoom={controlsConfig.showZoom}
             showFitView={controlsConfig.showFitView}
             showInteractive={controlsConfig.showInteractive}
-          />
+          >
+            {customControlButtons
+              .filter(btn => btn.enabled && btn.position === 'before')
+              .map(btn => (
+                <ControlButton
+                  key={btn.id}
+                  onClick={() => {
+                    // Handle button clicks
+                    if (btn.label === 'Magic') {
+                      alert('Something magical just happened! ✨');
+                    } else if (btn.label === 'Reset') {
+                      setNodes(initialNodes);
+                      setEdges(initialEdges);
+                      alert('Flow reset to initial state! 🔄');
+                    } else if (btn.label === 'Save') {
+                      const flowData = { nodes, edges };
+                      console.log('Flow saved:', flowData);
+                      alert('Flow saved to console! 💾');
+                    } else {
+                      alert(`${btn.label} button clicked!`);
+                    }
+                  }}
+                  title={btn.label}
+                  aria-label={btn.label}
+                >
+                  <span style={{ fontSize: '16px' }}>{btn.icon}</span>
+                </ControlButton>
+              ))}
+            {customControlButtons
+              .filter(btn => btn.enabled && btn.position === 'after')
+              .map(btn => (
+                <ControlButton
+                  key={btn.id}
+                  onClick={() => {
+                    // Handle button clicks
+                    if (btn.label === 'Magic') {
+                      alert('Something magical just happened! ✨');
+                    } else if (btn.label === 'Reset') {
+                      setNodes(initialNodes);
+                      setEdges(initialEdges);
+                      alert('Flow reset to initial state! 🔄');
+                    } else if (btn.label === 'Save') {
+                      const flowData = { nodes, edges };
+                      console.log('Flow saved:', flowData);
+                      alert('Flow saved to console! 💾');
+                    } else {
+                      alert(`${btn.label} button clicked!`);
+                    }
+                  }}
+                  title={btn.label}
+                  aria-label={btn.label}
+                >
+                  <span style={{ fontSize: '16px' }}>{btn.icon}</span>
+                </ControlButton>
+              ))}
+          </Controls>
         )}
         
         {miniMapEnabled && (

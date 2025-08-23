@@ -44,6 +44,13 @@ export default function HaloMapPage() {
     edgeType: 'bezier' as 'straight' | 'bezier' | 'step' | 'smoothstep',
     animated: false
   });
+  
+  // Custom Control Buttons state
+  const [customControlButtons, setCustomControlButtons] = useState([
+    { id: '1', label: 'Magic', icon: '✨', enabled: false, position: 'after' as const },
+    { id: '2', label: 'Reset', icon: '🔄', enabled: false, position: 'after' as const },
+    { id: '3', label: 'Save', icon: '💾', enabled: false, position: 'before' as const }
+  ]);
 
   return (
     <div className="h-[calc(100vh-3.5rem)] flex">
@@ -69,6 +76,8 @@ export default function HaloMapPage() {
         onPanelPositionChange={(pos) => setPanelPosition(pos as any)}
         baseEdgeConfig={baseEdgeConfig}
         onBaseEdgeConfigChange={setBaseEdgeConfig}
+        customControlButtons={customControlButtons}
+        onCustomControlButtonsChange={setCustomControlButtons}
       />      {/* Main Flow Area */}
       <div className="flex-1 relative">
         <div className="absolute inset-0">
@@ -83,6 +92,7 @@ export default function HaloMapPage() {
             panelEnabled={panelEnabled}
             panelPosition={panelPosition}
             baseEdgeConfig={baseEdgeConfig}
+            customControlButtons={customControlButtons}
           />
         </div>
 
