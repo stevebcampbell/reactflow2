@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useMemo } from 'react';
 import {
   ReactFlow,
   Controls,
@@ -19,6 +19,7 @@ import {
   type Connection,
   BackgroundVariant,
 } from '@xyflow/react';
+import { CustomEdge } from './custom-edge';
 import '@xyflow/react/dist/style.css';
 
 const initialNodes: Node[] = [
@@ -91,6 +92,17 @@ interface FlowProps {
     enabled: boolean;
     position: 'before' | 'after';
   }>;
+  edgeLabelConfig?: {
+    useHtmlLabels: boolean;
+    showBackground: boolean;
+    backgroundColor: string;
+    textColor: string;
+    fontSize: number;
+    padding: number;
+    borderRadius: number;
+    fontWeight: 'normal' | 'bold';
+    interactive: boolean;
+  };
 }
 
 const nodeColor = (node: Node) => {
@@ -122,10 +134,32 @@ function Flow({
     edgeType: 'bezier',
     animated: false
   },
-  customControlButtons = []
+  customControlButtons = [],
+  edgeLabelConfig = {
+    useHtmlLabels: false,
+    showBackground: true,
+    backgroundColor: '#ffcc00',
+    textColor: '#000000',
+    fontSize: 12,
+    padding: 10,
+    borderRadius: 5,
+    fontWeight: 'normal' as const,
+    interactive: false
+  }
 }: FlowProps) {
   const [nodes, setNodes] = useState<Node[]>(initialNodes);
   const [edges, setEdges] = useState<Edge[]>(initialEdges);
+
+  // Custom edge types that use our CustomEdge component
+  const edgeTypes = useMemo(
+    () => ({
+      straight: (props: any) => <CustomEdge {...props} edgeLabelConfig={edgeLabelConfig} />,
+      bezier: (props: any) => <CustomEdge {...props} edgeLabelConfig={edgeLabelConfig} />,
+      step: (props: any) => <CustomEdge {...props} edgeLabelConfig={edgeLabelConfig} />,
+      smoothstep: (props: any) => <CustomEdge {...props} edgeLabelConfig={edgeLabelConfig} />,
+    }),
+    [edgeLabelConfig]
+  );
 
   // Update edges when baseEdgeConfig changes
   useEffect(() => {
@@ -185,6 +219,7 @@ function Flow({
       <ReactFlow
         nodes={nodes}
         edges={edges}
+        edgeTypes={edgeTypes}
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
         onConnect={onConnect}

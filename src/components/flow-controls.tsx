@@ -58,6 +58,18 @@ export interface FlowControlsProps {
     position: 'before' | 'after';
   }>;
   onCustomControlButtonsChange?: (buttons: any[]) => void;
+  edgeLabelConfig?: {
+    useHtmlLabels: boolean;
+    showBackground: boolean;
+    backgroundColor: string;
+    textColor: string;
+    fontSize: number;
+    padding: number;
+    borderRadius: number;
+    fontWeight: 'normal' | 'bold';
+    interactive: boolean;
+  };
+  onEdgeLabelConfigChange?: (config: any) => void;
 }
 
 function FlowControls({ 
@@ -93,7 +105,19 @@ function FlowControls({
     { id: '2', label: 'Reset', icon: '🔄', enabled: false, position: 'after' as const },
     { id: '3', label: 'Save', icon: '💾', enabled: false, position: 'before' as const }
   ],
-  onCustomControlButtonsChange
+  onCustomControlButtonsChange,
+  edgeLabelConfig = {
+    useHtmlLabels: false,
+    showBackground: true,
+    backgroundColor: '#ffcc00',
+    textColor: '#000000',
+    fontSize: 12,
+    padding: 10,
+    borderRadius: 5,
+    fontWeight: 'normal' as const,
+    interactive: false
+  },
+  onEdgeLabelConfigChange
 }: FlowControlsProps) {
   return (
     <div className="w-80 border-r bg-white dark:bg-slate-900 p-4 space-y-4 h-full overflow-y-auto">
@@ -682,6 +706,205 @@ function FlowControls({
                   <div>• Position before/after default buttons</div>
                   <div>• Customize icon and label</div>
                   <div>• Click handlers defined in code</div>
+                </div>
+              </div>
+            </div>
+          </AccordionContent>
+        </AccordionItem>
+
+        {/* EdgeLabelRenderer Configuration Section */}
+        <AccordionItem value="edgelabel" className="border rounded-lg bg-white dark:bg-slate-800">
+          <AccordionTrigger className="px-4 py-3 hover:no-underline">
+            <div className="flex items-center gap-3">
+              <span className="text-lg">🏷️</span>
+              <div className="flex-1 text-left">
+                <span className="font-semibold text-black dark:text-white">Edge Label Renderer</span>
+                <div className="text-xs text-gray-500 dark:text-gray-400">HTML-based edge labels</div>
+              </div>
+              {edgeLabelConfig.useHtmlLabels && (
+                <Badge variant="default" className="bg-orange-600 text-white text-xs">HTML</Badge>
+              )}
+            </div>
+          </AccordionTrigger>
+          <AccordionContent className="px-4 pb-4">
+            <div className="space-y-4">
+              {/* Use HTML Labels Toggle */}
+              <div className="flex items-center justify-between">
+                <div>
+                  <Label htmlFor="use-html-labels" className="text-sm font-medium">Use HTML Labels</Label>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    Enable div-based labels instead of SVG
+                  </p>
+                </div>
+                <Switch
+                  id="use-html-labels"
+                  checked={edgeLabelConfig.useHtmlLabels}
+                  onCheckedChange={(checked) => onEdgeLabelConfigChange?.({...edgeLabelConfig, useHtmlLabels: checked})}
+                />
+              </div>
+
+              {edgeLabelConfig.useHtmlLabels && (
+                <>
+                  {/* Background Options */}
+                  <div className="space-y-3 border-t pt-3">
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="label-bg" className="text-xs">Show Background</Label>
+                      <Switch
+                        id="label-bg"
+                        checked={edgeLabelConfig.showBackground}
+                        onCheckedChange={(checked) => onEdgeLabelConfigChange?.({...edgeLabelConfig, showBackground: checked})}
+                        className="scale-75"
+                      />
+                    </div>
+
+                    {edgeLabelConfig.showBackground && (
+                      <div className="space-y-3 ml-2">
+                        {/* Background Color */}
+                        <div className="flex items-center justify-between">
+                          <Label htmlFor="label-bg-color" className="text-xs">Background Color</Label>
+                          <div className="flex items-center gap-2">
+                            <input
+                              id="label-bg-color"
+                              type="color"
+                              value={edgeLabelConfig.backgroundColor}
+                              onChange={(e) => onEdgeLabelConfigChange?.({...edgeLabelConfig, backgroundColor: e.target.value})}
+                              className="w-8 h-8 border rounded cursor-pointer"
+                            />
+                            <input
+                              type="text"
+                              value={edgeLabelConfig.backgroundColor}
+                              onChange={(e) => onEdgeLabelConfigChange?.({...edgeLabelConfig, backgroundColor: e.target.value})}
+                              className="w-20 px-2 py-1 text-xs border rounded bg-white dark:bg-slate-800"
+                            />
+                          </div>
+                        </div>
+
+                        {/* Border Radius */}
+                        <div className="flex items-center justify-between">
+                          <Label htmlFor="label-radius" className="text-xs">Border Radius</Label>
+                          <div className="flex items-center gap-2">
+                            <input
+                              id="label-radius"
+                              type="range"
+                              min="0"
+                              max="20"
+                              value={edgeLabelConfig.borderRadius}
+                              onChange={(e) => onEdgeLabelConfigChange?.({...edgeLabelConfig, borderRadius: Number(e.target.value)})}
+                              className="w-20 h-1 bg-gray-300 rounded-lg appearance-none cursor-pointer"
+                            />
+                            <span className="text-xs text-gray-600 dark:text-gray-400 w-8">{edgeLabelConfig.borderRadius}px</span>
+                          </div>
+                        </div>
+
+                        {/* Padding */}
+                        <div className="flex items-center justify-between">
+                          <Label htmlFor="label-padding" className="text-xs">Padding</Label>
+                          <div className="flex items-center gap-2">
+                            <input
+                              id="label-padding"
+                              type="range"
+                              min="0"
+                              max="20"
+                              value={edgeLabelConfig.padding}
+                              onChange={(e) => onEdgeLabelConfigChange?.({...edgeLabelConfig, padding: Number(e.target.value)})}
+                              className="w-20 h-1 bg-gray-300 rounded-lg appearance-none cursor-pointer"
+                            />
+                            <span className="text-xs text-gray-600 dark:text-gray-400 w-8">{edgeLabelConfig.padding}px</span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Text Options */}
+                  <div className="space-y-3 border-t pt-3">
+                    <div className="text-xs font-medium text-gray-700 dark:text-gray-300">Text Styling</div>
+                    
+                    {/* Text Color */}
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="label-text-color" className="text-xs">Text Color</Label>
+                      <div className="flex items-center gap-2">
+                        <input
+                          id="label-text-color"
+                          type="color"
+                          value={edgeLabelConfig.textColor}
+                          onChange={(e) => onEdgeLabelConfigChange?.({...edgeLabelConfig, textColor: e.target.value})}
+                          className="w-8 h-8 border rounded cursor-pointer"
+                        />
+                        <input
+                          type="text"
+                          value={edgeLabelConfig.textColor}
+                          onChange={(e) => onEdgeLabelConfigChange?.({...edgeLabelConfig, textColor: e.target.value})}
+                          className="w-20 px-2 py-1 text-xs border rounded bg-white dark:bg-slate-800"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Font Size */}
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="label-font-size" className="text-xs">Font Size</Label>
+                      <div className="flex items-center gap-2">
+                        <input
+                          id="label-font-size"
+                          type="range"
+                          min="8"
+                          max="24"
+                          value={edgeLabelConfig.fontSize}
+                          onChange={(e) => onEdgeLabelConfigChange?.({...edgeLabelConfig, fontSize: Number(e.target.value)})}
+                          className="w-20 h-1 bg-gray-300 rounded-lg appearance-none cursor-pointer"
+                        />
+                        <span className="text-xs text-gray-600 dark:text-gray-400 w-8">{edgeLabelConfig.fontSize}px</span>
+                      </div>
+                    </div>
+
+                    {/* Font Weight */}
+                    <div className="flex items-center justify-between">
+                      <Label className="text-xs">Font Weight</Label>
+                      <RadioGroup 
+                        value={edgeLabelConfig.fontWeight} 
+                        onValueChange={(value) => onEdgeLabelConfigChange?.({...edgeLabelConfig, fontWeight: value as 'normal' | 'bold'})}
+                        className="flex gap-3"
+                      >
+                        <div className="flex items-center space-x-1">
+                          <RadioGroupItem value="normal" id="weight-normal" />
+                          <Label htmlFor="weight-normal" className="text-xs cursor-pointer">Normal</Label>
+                        </div>
+                        <div className="flex items-center space-x-1">
+                          <RadioGroupItem value="bold" id="weight-bold" />
+                          <Label htmlFor="weight-bold" className="text-xs cursor-pointer">Bold</Label>
+                        </div>
+                      </RadioGroup>
+                    </div>
+                  </div>
+
+                  {/* Interactive Toggle */}
+                  <div className="space-y-2 border-t pt-3">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <Label htmlFor="label-interactive" className="text-xs">Interactive Labels</Label>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                          Allow pointer events on labels
+                        </p>
+                      </div>
+                      <Switch
+                        id="label-interactive"
+                        checked={edgeLabelConfig.interactive}
+                        onCheckedChange={(checked) => onEdgeLabelConfigChange?.({...edgeLabelConfig, interactive: checked})}
+                        className="scale-75"
+                      />
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {/* Info Box */}
+              <div className="bg-orange-50 dark:bg-orange-900/20 p-2 rounded-lg border border-orange-200 dark:border-orange-800">
+                <div className="text-xs text-orange-700 dark:text-orange-300">
+                  <div className="font-semibold mb-1">EdgeLabelRenderer Features:</div>
+                  <div>• Renders labels as HTML divs</div>
+                  <div>• Supports complex React components</div>
+                  <div>• Better for rich content & styling</div>
+                  <div>• Positioned above SVG edges</div>
                 </div>
               </div>
             </div>

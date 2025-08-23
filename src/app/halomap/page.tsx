@@ -51,6 +51,19 @@ export default function HaloMapPage() {
     { id: '2', label: 'Reset', icon: '🔄', enabled: false, position: 'after' as const },
     { id: '3', label: 'Save', icon: '💾', enabled: false, position: 'before' as const }
   ]);
+  
+  // EdgeLabelRenderer state
+  const [edgeLabelConfig, setEdgeLabelConfig] = useState({
+    useHtmlLabels: false,
+    showBackground: true,
+    backgroundColor: '#ffcc00',
+    textColor: '#000000',
+    fontSize: 12,
+    padding: 10,
+    borderRadius: 5,
+    fontWeight: 'normal' as 'normal' | 'bold',
+    interactive: false
+  });
 
   return (
     <div className="h-[calc(100vh-3.5rem)] flex">
@@ -78,6 +91,8 @@ export default function HaloMapPage() {
         onBaseEdgeConfigChange={setBaseEdgeConfig}
         customControlButtons={customControlButtons}
         onCustomControlButtonsChange={setCustomControlButtons}
+        edgeLabelConfig={edgeLabelConfig}
+        onEdgeLabelConfigChange={setEdgeLabelConfig}
       />      {/* Main Flow Area */}
       <div className="flex-1 relative">
         <div className="absolute inset-0">
@@ -93,6 +108,7 @@ export default function HaloMapPage() {
             panelPosition={panelPosition}
             baseEdgeConfig={baseEdgeConfig}
             customControlButtons={customControlButtons}
+            edgeLabelConfig={edgeLabelConfig}
           />
         </div>
 
