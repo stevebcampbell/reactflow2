@@ -106,6 +106,7 @@ export interface FlowControlsProps {
   onHandleConfigChange?: (config: any) => void;
   nodeResizeConfig?: {
     enabled: boolean;
+    isVisible: boolean;
     color: string;
     handleSize: number;
     lineSize: number;
@@ -114,11 +115,51 @@ export interface FlowControlsProps {
     maxWidth: number;
     maxHeight: number;
     keepAspectRatio: boolean;
-    position: 'all' | 'corners' | 'edges';
-    variant: 'handle' | 'line';
     autoScale: boolean;
   };
   onNodeResizeConfigChange?: (config: any) => void;
+  nodeToolbarConfig?: {
+    enabled: boolean;
+    isVisible: boolean;
+    position: 'top' | 'right' | 'bottom' | 'left';
+    align: 'start' | 'center' | 'end';
+    offset: number;
+    buttons: Array<{
+      id: string;
+      label: string;
+      icon: string;
+      action: 'delete' | 'duplicate' | 'edit' | 'info';
+    }>;
+    style: {
+      backgroundColor: string;
+      borderColor: string;
+      borderRadius: number;
+      padding: number;
+    };
+  };
+  onNodeToolbarConfigChange?: (config: any) => void;
+  viewportPortalConfig?: {
+    enabled: boolean;
+    editMode?: boolean;
+    elements: Array<{
+      id: string;
+      type: 'text' | 'shape' | 'image' | 'custom';
+      content: string;
+      x: number;
+      y: number;
+      style: {
+        color: string;
+        backgroundColor: string;
+        fontSize: number;
+        padding: number;
+        borderRadius: number;
+        opacity: number;
+      };
+    }>;
+    showGrid: boolean;
+    gridSize: number;
+  };
+  onViewportPortalConfigChange?: (config: any) => void;
 }
 
 function FlowControls({ 
@@ -203,6 +244,7 @@ function FlowControls({
   onHandleConfigChange,
   nodeResizeConfig = {
     enabled: false,
+    isVisible: true,
     color: '#3b82f6',
     handleSize: 8,
     lineSize: 2,
@@ -211,14 +253,55 @@ function FlowControls({
     maxWidth: 500,
     maxHeight: 500,
     keepAspectRatio: false,
-    position: 'corners' as const,
-    variant: 'handle' as const,
     autoScale: true
   },
-  onNodeResizeConfigChange
+  onNodeResizeConfigChange,
+  nodeToolbarConfig = {
+    enabled: false,
+    isVisible: false,
+    position: 'top' as const,
+    align: 'center' as const,
+    offset: 10,
+    buttons: [
+      { id: '1', label: 'Delete', icon: '🗑️', action: 'delete' as const },
+      { id: '2', label: 'Copy', icon: '📋', action: 'duplicate' as const },
+      { id: '3', label: 'Edit', icon: '✏️', action: 'edit' as const },
+    ],
+    style: {
+      backgroundColor: '#ffffff',
+      borderColor: '#e5e7eb',
+      borderRadius: 6,
+      padding: 4
+    }
+  },
+  onNodeToolbarConfigChange,
+  viewportPortalConfig = {
+    enabled: false,
+    elements: [
+      { 
+        id: '1', 
+        type: 'text' as const, 
+        content: 'Viewport Text', 
+        x: 250,
+        y: 150,
+        style: {
+          color: '#1e293b',
+          backgroundColor: '#fef3c7',
+          fontSize: 14,
+          padding: 8,
+          borderRadius: 4,
+          opacity: 1
+        }
+      }
+    ],
+    showGrid: false,
+    gridSize: 50
+  },
+  onViewportPortalConfigChange
 }: FlowControlsProps) {
   return (
-    <div className="w-80 border-r bg-white dark:bg-slate-900 p-4 space-y-4 h-full overflow-y-auto">
+    <div className="w-80 border-r bg-white dark:bg-slate-900 h-full overflow-y-auto overflow-x-hidden">
+      <div className="p-4 space-y-4 pb-8">
       <div>
         <h2 className="text-lg font-semibold mb-2 text-black dark:text-white">
           🔧 React Flow Configuration
@@ -409,10 +492,20 @@ function FlowControls({
                       className="scale-75"
                     />
                   </div>
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="controls-resetview" className="text-xs">Show Reset View</Label>
+                    <Switch
+                      id="controls-resetview"
+                      checked={controlsConfig.showResetView}
+                      onCheckedChange={(checked) => onControlsConfigChange?.({...controlsConfig, showResetView: checked})}
+                      className="scale-75"
+                    />
+                  </div>
                   <div className="text-xs text-gray-600 dark:text-gray-300 mt-2">
                     <div>• Zoom in/out buttons</div>
                     <div>• Fit view to center content</div>
                     <div>• Toggle interactive mode</div>
+                    <div>• Reset to default view</div>
                   </div>
                 </div>
               )}
@@ -1502,14 +1595,14 @@ function FlowControls({
           </AccordionContent>
         </AccordionItem>
 
-        {/* NodeResizeControl Configuration Section */}
-        <AccordionItem value="noderesize" className="border rounded-lg bg-white dark:bg-slate-800">
+        {/* NodeResizer Configuration Section */}
+        <AccordionItem value="noderesizer" className="border rounded-lg bg-white dark:bg-slate-800">
           <AccordionTrigger className="px-4 py-3 hover:no-underline">
             <div className="flex items-center gap-3">
-              <span className="text-lg">🔄</span>
+              <span className="text-lg">📐</span>
               <div className="flex-1 text-left">
-                <span className="font-semibold text-black dark:text-white">Node Resize Control</span>
-                <div className="text-xs text-gray-500 dark:text-gray-400">Resizing handles for nodes</div>
+                <span className="font-semibold text-black dark:text-white">Node Resizer</span>
+                <div className="text-xs text-gray-500 dark:text-gray-400">Drag-to-resize functionality</div>
               </div>
               {nodeResizeConfig.enabled && (
                 <Badge variant="default" className="bg-cyan-600 text-white text-xs">Resizable</Badge>
@@ -1535,47 +1628,27 @@ function FlowControls({
 
               {nodeResizeConfig.enabled && (
                 <>
-                  {/* Resize Position */}
-                  <div className="space-y-2">
-                    <Label className="text-xs font-medium">Resize Position</Label>
-                    <RadioGroup 
-                      value={nodeResizeConfig.position} 
-                      onValueChange={(value) => onNodeResizeConfigChange?.({...nodeResizeConfig, position: value})}
-                    >
-                      <div className="space-y-2">
+                  {/* Visibility Options */}
+                  <div className="space-y-3">
+                    <div className="text-xs font-medium text-gray-700 dark:text-gray-300">Display Options</div>
+                    
+                    {/* Always Visible vs On Selection */}
+                    <div className="space-y-2">
+                      <Label className="text-xs">Visibility</Label>
+                      <RadioGroup 
+                        value={nodeResizeConfig.isVisible ? 'always' : 'selected'} 
+                        onValueChange={(value) => onNodeResizeConfigChange?.({...nodeResizeConfig, isVisible: value === 'always'})}
+                      >
                         <div className="flex items-center space-x-2">
-                          <RadioGroupItem value="corners" id="pos-corners" />
-                          <Label htmlFor="pos-corners" className="text-xs cursor-pointer">Corners Only</Label>
+                          <RadioGroupItem value="always" id="vis-always" />
+                          <Label htmlFor="vis-always" className="text-xs cursor-pointer">Always Visible</Label>
                         </div>
                         <div className="flex items-center space-x-2">
-                          <RadioGroupItem value="edges" id="pos-edges" />
-                          <Label htmlFor="pos-edges" className="text-xs cursor-pointer">Edges Only</Label>
+                          <RadioGroupItem value="selected" id="vis-selected" />
+                          <Label htmlFor="vis-selected" className="text-xs cursor-pointer">Only When Selected</Label>
                         </div>
-                        <div className="flex items-center space-x-2">
-                          <RadioGroupItem value="all" id="pos-all" />
-                          <Label htmlFor="pos-all" className="text-xs cursor-pointer">All (Corners + Edges)</Label>
-                        </div>
-                      </div>
-                    </RadioGroup>
-                  </div>
-
-                  {/* Variant Selection */}
-                  <div className="space-y-2">
-                    <Label className="text-xs font-medium">Control Style</Label>
-                    <RadioGroup 
-                      value={nodeResizeConfig.variant} 
-                      onValueChange={(value) => onNodeResizeConfigChange?.({...nodeResizeConfig, variant: value as 'handle' | 'line'})}
-                      className="flex gap-3"
-                    >
-                      <div className="flex items-center space-x-1">
-                        <RadioGroupItem value="handle" id="variant-handle" />
-                        <Label htmlFor="variant-handle" className="text-xs cursor-pointer">Handle</Label>
-                      </div>
-                      <div className="flex items-center space-x-1">
-                        <RadioGroupItem value="line" id="variant-line" />
-                        <Label htmlFor="variant-line" className="text-xs cursor-pointer">Line</Label>
-                      </div>
-                    </RadioGroup>
+                      </RadioGroup>
+                    </div>
                   </div>
 
                   {/* Visual Style */}
@@ -1603,42 +1676,38 @@ function FlowControls({
                     </div>
 
                     {/* Handle Size */}
-                    {nodeResizeConfig.variant === 'handle' && (
-                      <div className="flex items-center justify-between">
-                        <Label htmlFor="handle-size" className="text-xs">Handle Size</Label>
-                        <div className="flex items-center gap-2">
-                          <input
-                            id="handle-size"
-                            type="range"
-                            min="4"
-                            max="16"
-                            value={nodeResizeConfig.handleSize}
-                            onChange={(e) => onNodeResizeConfigChange?.({...nodeResizeConfig, handleSize: Number(e.target.value)})}
-                            className="w-20 h-1 bg-gray-300 rounded-lg appearance-none cursor-pointer"
-                          />
-                          <span className="text-xs text-gray-600 dark:text-gray-400 w-8">{nodeResizeConfig.handleSize}px</span>
-                        </div>
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="handle-size" className="text-xs">Handle Size</Label>
+                      <div className="flex items-center gap-2">
+                        <input
+                          id="handle-size"
+                          type="range"
+                          min="4"
+                          max="16"
+                          value={nodeResizeConfig.handleSize}
+                          onChange={(e) => onNodeResizeConfigChange?.({...nodeResizeConfig, handleSize: Number(e.target.value)})}
+                          className="w-20 h-1 bg-gray-300 rounded-lg appearance-none cursor-pointer"
+                        />
+                        <span className="text-xs text-gray-600 dark:text-gray-400 w-8">{nodeResizeConfig.handleSize}px</span>
                       </div>
-                    )}
+                    </div>
 
-                    {/* Line Size */}
-                    {nodeResizeConfig.variant === 'line' && (
-                      <div className="flex items-center justify-between">
-                        <Label htmlFor="line-size" className="text-xs">Line Width</Label>
-                        <div className="flex items-center gap-2">
-                          <input
-                            id="line-size"
-                            type="range"
-                            min="1"
-                            max="5"
-                            value={nodeResizeConfig.lineSize}
-                            onChange={(e) => onNodeResizeConfigChange?.({...nodeResizeConfig, lineSize: Number(e.target.value)})}
-                            className="w-20 h-1 bg-gray-300 rounded-lg appearance-none cursor-pointer"
-                          />
-                          <span className="text-xs text-gray-600 dark:text-gray-400 w-6">{nodeResizeConfig.lineSize}px</span>
-                        </div>
+                    {/* Line Width */}
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="line-width" className="text-xs">Line Width</Label>
+                      <div className="flex items-center gap-2">
+                        <input
+                          id="line-width"
+                          type="range"
+                          min="1"
+                          max="5"
+                          value={nodeResizeConfig.lineSize}
+                          onChange={(e) => onNodeResizeConfigChange?.({...nodeResizeConfig, lineSize: Number(e.target.value)})}
+                          className="w-20 h-1 bg-gray-300 rounded-lg appearance-none cursor-pointer"
+                        />
+                        <span className="text-xs text-gray-600 dark:text-gray-400 w-6">{nodeResizeConfig.lineSize}px</span>
                       </div>
-                    )}
+                    </div>
                   </div>
 
                   {/* Size Constraints */}
@@ -1751,11 +1820,574 @@ function FlowControls({
               {/* Info Box */}
               <div className="bg-cyan-50 dark:bg-cyan-900/20 p-2 rounded-lg border border-cyan-200 dark:border-cyan-800">
                 <div className="text-xs text-cyan-700 dark:text-cyan-300">
-                  <div className="font-semibold mb-1">NodeResizeControl Features:</div>
-                  <div>• Custom resize UI for nodes</div>
-                  <div>• Corner, edge, or combined controls</div>
+                  <div className="font-semibold mb-1">NodeResizer Features:</div>
+                  <div>• Drag handles to resize nodes</div>
+                  <div>• All 8 resize points (corners + edges)</div>
                   <div>• Min/max size constraints</div>
-                  <div>• Aspect ratio preservation</div>
+                  <div>• Aspect ratio preservation option</div>
+                  <div>• Auto-scales with zoom level</div>
+                </div>
+              </div>
+            </div>
+          </AccordionContent>
+        </AccordionItem>
+
+        {/* NodeToolbar Configuration Section */}
+        <AccordionItem value="nodetoolbar" className="border rounded-lg bg-white dark:bg-slate-800">
+          <AccordionTrigger className="px-4 py-3 hover:no-underline">
+            <div className="flex items-center gap-3">
+              <span className="text-lg">🛠️</span>
+              <div className="flex-1 text-left">
+                <span className="font-semibold text-black dark:text-white">Node Toolbar</span>
+                <div className="text-xs text-gray-500 dark:text-gray-400">Context actions for nodes</div>
+              </div>
+              {nodeToolbarConfig.enabled && (
+                <Badge variant="default" className="bg-amber-600 text-white text-xs">Toolbar</Badge>
+              )}
+            </div>
+          </AccordionTrigger>
+          <AccordionContent className="px-4 pb-4">
+            <div className="space-y-4">
+              {/* Enable Toolbar */}
+              <div className="flex items-center justify-between">
+                <div>
+                  <Label htmlFor="toolbar-enable" className="text-sm font-medium">Enable Toolbar</Label>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    Show action buttons on nodes
+                  </p>
+                </div>
+                <Switch
+                  id="toolbar-enable"
+                  checked={nodeToolbarConfig.enabled}
+                  onCheckedChange={(checked) => onNodeToolbarConfigChange?.({...nodeToolbarConfig, enabled: checked})}
+                />
+              </div>
+
+              {nodeToolbarConfig.enabled && (
+                <>
+                  {/* Visibility Mode */}
+                  <div className="space-y-2">
+                    <Label className="text-xs font-medium">Visibility</Label>
+                    <RadioGroup 
+                      value={nodeToolbarConfig.isVisible ? 'always' : 'selected'} 
+                      onValueChange={(value) => onNodeToolbarConfigChange?.({...nodeToolbarConfig, isVisible: value === 'always'})}
+                    >
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="selected" id="toolbar-selected" />
+                        <Label htmlFor="toolbar-selected" className="text-xs cursor-pointer">Show on Selection</Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="always" id="toolbar-always" />
+                        <Label htmlFor="toolbar-always" className="text-xs cursor-pointer">Always Visible</Label>
+                      </div>
+                    </RadioGroup>
+                  </div>
+
+                  {/* Position */}
+                  <div className="space-y-2">
+                    <Label className="text-xs font-medium">Position</Label>
+                    <RadioGroup 
+                      value={nodeToolbarConfig.position} 
+                      onValueChange={(value) => onNodeToolbarConfigChange?.({...nodeToolbarConfig, position: value as any})}
+                      className="grid grid-cols-2 gap-2"
+                    >
+                      <div className="flex items-center space-x-1">
+                        <RadioGroupItem value="top" id="pos-top" />
+                        <Label htmlFor="pos-top" className="text-xs cursor-pointer">Top</Label>
+                      </div>
+                      <div className="flex items-center space-x-1">
+                        <RadioGroupItem value="right" id="pos-right" />
+                        <Label htmlFor="pos-right" className="text-xs cursor-pointer">Right</Label>
+                      </div>
+                      <div className="flex items-center space-x-1">
+                        <RadioGroupItem value="bottom" id="pos-bottom" />
+                        <Label htmlFor="pos-bottom" className="text-xs cursor-pointer">Bottom</Label>
+                      </div>
+                      <div className="flex items-center space-x-1">
+                        <RadioGroupItem value="left" id="pos-left" />
+                        <Label htmlFor="pos-left" className="text-xs cursor-pointer">Left</Label>
+                      </div>
+                    </RadioGroup>
+                  </div>
+
+                  {/* Alignment */}
+                  <div className="space-y-2">
+                    <Label className="text-xs font-medium">Alignment</Label>
+                    <RadioGroup 
+                      value={nodeToolbarConfig.align} 
+                      onValueChange={(value) => onNodeToolbarConfigChange?.({...nodeToolbarConfig, align: value as any})}
+                      className="flex gap-3"
+                    >
+                      <div className="flex items-center space-x-1">
+                        <RadioGroupItem value="start" id="align-start" />
+                        <Label htmlFor="align-start" className="text-xs cursor-pointer">Start</Label>
+                      </div>
+                      <div className="flex items-center space-x-1">
+                        <RadioGroupItem value="center" id="align-center" />
+                        <Label htmlFor="align-center" className="text-xs cursor-pointer">Center</Label>
+                      </div>
+                      <div className="flex items-center space-x-1">
+                        <RadioGroupItem value="end" id="align-end" />
+                        <Label htmlFor="align-end" className="text-xs cursor-pointer">End</Label>
+                      </div>
+                    </RadioGroup>
+                  </div>
+
+                  {/* Offset */}
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="toolbar-offset" className="text-xs">Offset</Label>
+                    <div className="flex items-center gap-2">
+                      <input
+                        id="toolbar-offset"
+                        type="range"
+                        min="0"
+                        max="50"
+                        value={nodeToolbarConfig.offset}
+                        onChange={(e) => onNodeToolbarConfigChange?.({...nodeToolbarConfig, offset: Number(e.target.value)})}
+                        className="w-20 h-1 bg-gray-300 rounded-lg appearance-none cursor-pointer"
+                      />
+                      <span className="text-xs text-gray-600 dark:text-gray-400 w-8">{nodeToolbarConfig.offset}px</span>
+                    </div>
+                  </div>
+
+                  {/* Toolbar Buttons */}
+                  <div className="space-y-3 border-t pt-3">
+                    <div className="text-xs font-medium text-gray-700 dark:text-gray-300">Toolbar Buttons</div>
+                    <div className="space-y-2">
+                      {nodeToolbarConfig.buttons.map((button, index) => (
+                        <div key={button.id} className="flex items-center justify-between p-2 border rounded">
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="text"
+                              value={button.icon}
+                              onChange={(e) => {
+                                const newButtons = [...nodeToolbarConfig.buttons];
+                                newButtons[index] = { ...button, icon: e.target.value };
+                                onNodeToolbarConfigChange?.({...nodeToolbarConfig, buttons: newButtons});
+                              }}
+                              className="w-10 px-1 py-1 text-center text-xs border rounded bg-white dark:bg-slate-800"
+                              maxLength={2}
+                            />
+                            <input
+                              type="text"
+                              value={button.label}
+                              onChange={(e) => {
+                                const newButtons = [...nodeToolbarConfig.buttons];
+                                newButtons[index] = { ...button, label: e.target.value };
+                                onNodeToolbarConfigChange?.({...nodeToolbarConfig, buttons: newButtons});
+                              }}
+                              className="flex-1 px-2 py-1 text-xs border rounded bg-white dark:bg-slate-800"
+                            />
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              const newButtons = nodeToolbarConfig.buttons.filter(b => b.id !== button.id);
+                              onNodeToolbarConfigChange?.({...nodeToolbarConfig, buttons: newButtons});
+                            }}
+                            className="h-6 w-6 p-0"
+                          >
+                            ❌
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-full"
+                      onClick={() => {
+                        const newButton = {
+                          id: Date.now().toString(),
+                          label: 'Action',
+                          icon: '✨',
+                          action: 'info' as const
+                        };
+                        onNodeToolbarConfigChange?.({...nodeToolbarConfig, buttons: [...nodeToolbarConfig.buttons, newButton]});
+                      }}
+                    >
+                      <span className="mr-2">➕</span>
+                      Add Button
+                    </Button>
+                  </div>
+
+                  {/* Style Settings */}
+                  <div className="space-y-3 border-t pt-3">
+                    <div className="text-xs font-medium text-gray-700 dark:text-gray-300">Toolbar Style</div>
+                    
+                    {/* Background Color */}
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="toolbar-bg" className="text-xs">Background</Label>
+                      <div className="flex items-center gap-2">
+                        <input
+                          id="toolbar-bg"
+                          type="color"
+                          value={nodeToolbarConfig.style.backgroundColor}
+                          onChange={(e) => onNodeToolbarConfigChange?.({
+                            ...nodeToolbarConfig,
+                            style: { ...nodeToolbarConfig.style, backgroundColor: e.target.value }
+                          })}
+                          className="w-8 h-8 border rounded cursor-pointer"
+                        />
+                        <input
+                          type="text"
+                          value={nodeToolbarConfig.style.backgroundColor}
+                          onChange={(e) => onNodeToolbarConfigChange?.({
+                            ...nodeToolbarConfig,
+                            style: { ...nodeToolbarConfig.style, backgroundColor: e.target.value }
+                          })}
+                          className="w-20 px-2 py-1 text-xs border rounded bg-white dark:bg-slate-800"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Border Radius */}
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="toolbar-radius" className="text-xs">Border Radius</Label>
+                      <div className="flex items-center gap-2">
+                        <input
+                          id="toolbar-radius"
+                          type="range"
+                          min="0"
+                          max="20"
+                          value={nodeToolbarConfig.style.borderRadius}
+                          onChange={(e) => onNodeToolbarConfigChange?.({
+                            ...nodeToolbarConfig,
+                            style: { ...nodeToolbarConfig.style, borderRadius: Number(e.target.value) }
+                          })}
+                          className="w-20 h-1 bg-gray-300 rounded-lg appearance-none cursor-pointer"
+                        />
+                        <span className="text-xs text-gray-600 dark:text-gray-400 w-8">{nodeToolbarConfig.style.borderRadius}px</span>
+                      </div>
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {/* Info Box */}
+              <div className="bg-amber-50 dark:bg-amber-900/20 p-2 rounded-lg border border-amber-200 dark:border-amber-800">
+                <div className="text-xs text-amber-700 dark:text-amber-300">
+                  <div className="font-semibold mb-1">NodeToolbar Features:</div>
+                  <div>• Context actions for nodes</div>
+                  <div>• Non-scaling with viewport</div>
+                  <div>• Customizable position & alignment</div>
+                  <div>• Dynamic button configuration</div>
+                </div>
+              </div>
+            </div>
+          </AccordionContent>
+        </AccordionItem>
+
+        {/* ViewportPortal Configuration Section */}
+        <AccordionItem value="viewportportal" className="border rounded-lg bg-white dark:bg-slate-800">
+          <AccordionTrigger className="px-4 py-3 hover:no-underline">
+            <div className="flex items-center gap-3">
+              <span className="text-lg">📍</span>
+              <div className="flex-1 text-left">
+                <span className="font-semibold text-black dark:text-white">Viewport Portal</span>
+                <div className="text-xs text-gray-500 dark:text-gray-400">Fixed screen overlays (HUD elements)</div>
+              </div>
+              {viewportPortalConfig.enabled && (
+                <Badge variant="default" className="bg-violet-600 text-white text-xs">
+                  {viewportPortalConfig.elements.length} Items
+                </Badge>
+              )}
+            </div>
+          </AccordionTrigger>
+          <AccordionContent className="px-4 pb-4">
+            <div className="space-y-4">
+              {/* Explanation */}
+              <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
+                <h4 className="text-xs font-semibold text-blue-900 dark:text-blue-100 mb-2">
+                  📍 What is ViewportPortal?
+                </h4>
+                <p className="text-xs text-blue-700 dark:text-blue-300 mb-2">
+                  ViewportPortal uses a <strong>different coordinate system</strong> than regular nodes!
+                </p>
+                <div className="grid grid-cols-2 gap-2 mb-2">
+                  <div className="bg-white dark:bg-slate-800 rounded p-2 text-xs">
+                    <div className="font-semibold text-green-600 dark:text-green-400 mb-1">🔲 Regular Nodes</div>
+                    <ul className="text-gray-600 dark:text-gray-400 space-y-0.5 text-[10px]">
+                      <li>• Flow coordinates</li>
+                      <li>• Move with pan</li>
+                      <li>• Scale with zoom</li>
+                      <li>• Can be anywhere</li>
+                    </ul>
+                  </div>
+                  <div className="bg-white dark:bg-slate-800 rounded p-2 text-xs">
+                    <div className="font-semibold text-blue-600 dark:text-blue-400 mb-1">📍 ViewportPortal</div>
+                    <ul className="text-gray-600 dark:text-gray-400 space-y-0.5 text-[10px]">
+                      <li>• Screen coordinates</li>
+                      <li>• Fixed position</li>
+                      <li>• No zoom effect</li>
+                      <li>• (0,0) = top-left screen</li>
+                    </ul>
+                  </div>
+                </div>
+                <div className="text-xs text-blue-700 dark:text-blue-300">
+                  <strong>Use cases:</strong> Watermarks, legends, HUD elements, floating controls
+                </div>
+                <div className="mt-2 p-2 bg-blue-100 dark:bg-blue-900/30 rounded text-xs">
+                  <strong>💡 Try it:</strong> Enable portal, add an element, then pan/zoom the flow - notice how the element stays in place on your screen!
+                </div>
+              </div>
+
+              {/* Enable ViewportPortal */}
+              <div className="flex items-center justify-between">
+                <div>
+                  <Label htmlFor="portal-enable" className="text-sm font-medium">Enable Viewport Portal</Label>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    Show fixed overlay elements
+                  </p>
+                </div>
+                <Switch
+                  id="portal-enable"
+                  checked={viewportPortalConfig.enabled}
+                  onCheckedChange={(checked) => onViewportPortalConfigChange?.({...viewportPortalConfig, enabled: checked})}
+                />
+              </div>
+
+              {viewportPortalConfig.enabled && (
+                <>
+                  {/* Enable Edit Mode */}
+                  <div className="flex items-center justify-between p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
+                    <div className="flex items-center gap-2">
+                      <span className="text-lg">✋</span>
+                      <div>
+                        <Label htmlFor="edit-mode" className="text-xs font-semibold text-yellow-900 dark:text-yellow-100">
+                          Edit Mode
+                        </Label>
+                        <p className="text-xs text-yellow-700 dark:text-yellow-300 mt-1">
+                          Enable dragging elements in viewport
+                        </p>
+                      </div>
+                    </div>
+                    <Switch
+                      id="edit-mode"
+                      checked={viewportPortalConfig.editMode || false}
+                      onCheckedChange={(checked) => onViewportPortalConfigChange?.({...viewportPortalConfig, editMode: checked})}
+                      className="scale-75"
+                    />
+                  </div>
+
+                  {/* Show Grid Helper */}
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <Label htmlFor="show-grid" className="text-xs">Show Grid Helper</Label>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                        Visual grid for positioning
+                      </p>
+                    </div>
+                    <Switch
+                      id="show-grid"
+                      checked={viewportPortalConfig.showGrid || false}
+                      onCheckedChange={(checked) => onViewportPortalConfigChange?.({...viewportPortalConfig, showGrid: checked})}
+                      className="scale-75"
+                    />
+                  </div>
+
+                  {viewportPortalConfig.showGrid && (
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="grid-size" className="text-xs">Grid Size</Label>
+                      <div className="flex items-center gap-2">
+                        <input
+                          id="grid-size"
+                          type="range"
+                          min="10"
+                          max="100"
+                          step="10"
+                          value={viewportPortalConfig.gridSize || 50}
+                          onChange={(e) => onViewportPortalConfigChange?.({...viewportPortalConfig, gridSize: Number(e.target.value)})}
+                          className="w-20 h-1 bg-gray-300 rounded-lg appearance-none cursor-pointer"
+                        />
+                        <span className="text-xs text-gray-600 dark:text-gray-400 w-8">{viewportPortalConfig.gridSize || 50}px</span>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Portal Elements */}
+                  <div className="space-y-3 border-t pt-3">
+                    <div className="text-xs font-medium text-gray-700 dark:text-gray-300">Portal Elements</div>
+                    <div className="space-y-2 max-h-60 overflow-y-auto">
+                      {viewportPortalConfig.elements.map((element, index) => (
+                        <div key={element.id} className="border rounded-lg p-3 bg-gray-50 dark:bg-slate-700/50">
+                          <div className="flex items-center justify-between mb-2">
+                            <div className="flex items-center gap-2">
+                              <RadioGroup 
+                                value={element.type} 
+                                onValueChange={(value) => {
+                                  const newElements = [...viewportPortalConfig.elements];
+                                  newElements[index] = { ...element, type: value as any };
+                                  onViewportPortalConfigChange?.({...viewportPortalConfig, elements: newElements});
+                                }}
+                                className="flex gap-2"
+                              >
+                                <div className="flex items-center space-x-1">
+                                  <RadioGroupItem value="text" id={`type-text-${element.id}`} />
+                                  <Label htmlFor={`type-text-${element.id}`} className="text-xs cursor-pointer">Text</Label>
+                                </div>
+                                <div className="flex items-center space-x-1">
+                                  <RadioGroupItem value="shape" id={`type-shape-${element.id}`} />
+                                  <Label htmlFor={`type-shape-${element.id}`} className="text-xs cursor-pointer">Shape</Label>
+                                </div>
+                              </RadioGroup>
+                            </div>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                const newElements = viewportPortalConfig.elements.filter(e => e.id !== element.id);
+                                onViewportPortalConfigChange?.({...viewportPortalConfig, elements: newElements});
+                              }}
+                              className="h-6 w-6 p-0"
+                            >
+                              ❌
+                            </Button>
+                          </div>
+
+                          {/* Content */}
+                          <div className="space-y-2">
+                            <input
+                              type="text"
+                              value={element.content}
+                              onChange={(e) => {
+                                const newElements = [...viewportPortalConfig.elements];
+                                newElements[index] = { ...element, content: e.target.value };
+                                onViewportPortalConfigChange?.({...viewportPortalConfig, elements: newElements});
+                              }}
+                              placeholder="Content"
+                              className="w-full px-2 py-1 text-xs border rounded bg-white dark:bg-slate-800"
+                            />
+
+                            {/* Position */}
+                            <div className="flex gap-2">
+                              <div className="flex items-center gap-1 flex-1">
+                                <Label className="text-xs">X:</Label>
+                                <input
+                                  type="number"
+                                  value={element.x}
+                                  onChange={(e) => {
+                                    const newElements = [...viewportPortalConfig.elements];
+                                    newElements[index] = { 
+                                      ...element, 
+                                      x: Number(e.target.value)
+                                    };
+                                    onViewportPortalConfigChange?.({...viewportPortalConfig, elements: newElements});
+                                  }}
+                                  className="w-full px-1 py-1 text-xs border rounded bg-white dark:bg-slate-800"
+                                />
+                              </div>
+                              <div className="flex items-center gap-1 flex-1">
+                                <Label className="text-xs">Y:</Label>
+                                <input
+                                  type="number"
+                                  value={element.y}
+                                  onChange={(e) => {
+                                    const newElements = [...viewportPortalConfig.elements];
+                                    newElements[index] = { 
+                                      ...element, 
+                                      y: Number(e.target.value)
+                                    };
+                                    onViewportPortalConfigChange?.({...viewportPortalConfig, elements: newElements});
+                                  }}
+                                  className="w-full px-1 py-1 text-xs border rounded bg-white dark:bg-slate-800"
+                                />
+                              </div>
+                            </div>
+
+                            {/* Style Options */}
+                            <div className="flex gap-2">
+                              <input
+                                type="color"
+                                value={element.style.color}
+                                onChange={(e) => {
+                                  const newElements = [...viewportPortalConfig.elements];
+                                  newElements[index] = { 
+                                    ...element, 
+                                    style: { ...element.style, color: e.target.value }
+                                  };
+                                  onViewportPortalConfigChange?.({...viewportPortalConfig, elements: newElements});
+                                }}
+                                className="w-8 h-6 border rounded cursor-pointer"
+                                title="Text Color"
+                              />
+                              <input
+                                type="color"
+                                value={element.style.backgroundColor}
+                                onChange={(e) => {
+                                  const newElements = [...viewportPortalConfig.elements];
+                                  newElements[index] = { 
+                                    ...element, 
+                                    style: { ...element.style, backgroundColor: e.target.value }
+                                  };
+                                  onViewportPortalConfigChange?.({...viewportPortalConfig, elements: newElements});
+                                }}
+                                className="w-8 h-6 border rounded cursor-pointer"
+                                title="Background Color"
+                              />
+                              <input
+                                type="range"
+                                min="0.1"
+                                max="1"
+                                step="0.1"
+                                value={element.style.opacity}
+                                onChange={(e) => {
+                                  const newElements = [...viewportPortalConfig.elements];
+                                  newElements[index] = { 
+                                    ...element, 
+                                    style: { ...element.style, opacity: Number(e.target.value) }
+                                  };
+                                  onViewportPortalConfigChange?.({...viewportPortalConfig, elements: newElements});
+                                }}
+                                className="flex-1 h-1 bg-gray-300 rounded-lg appearance-none cursor-pointer"
+                                title={`Opacity: ${element.style.opacity}`}
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Add Element Button */}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-full"
+                      onClick={() => {
+                        const newElement = {
+                          id: Date.now().toString(),
+                          type: 'text' as const,
+                          content: 'New Element',
+                          x: 100,
+                          y: 100,
+                          style: {
+                            color: '#1e293b',
+                            backgroundColor: '#ffffff',
+                            fontSize: 14,
+                            padding: 8,
+                            borderRadius: 4,
+                            opacity: 1
+                          }
+                        };
+                        onViewportPortalConfigChange?.({...viewportPortalConfig, elements: [...viewportPortalConfig.elements, newElement]});
+                      }}
+                    >
+                      <span className="mr-2">➕</span>
+                      Add Element
+                    </Button>
+                  </div>
+                </>
+              )}
+
+              {/* Info Box */}
+              <div className="bg-violet-50 dark:bg-violet-900/20 p-2 rounded-lg border border-violet-200 dark:border-violet-800">
+                <div className="text-xs text-violet-700 dark:text-violet-300">
+                  <div className="font-semibold mb-1">ViewportPortal Features:</div>
+                  <div>• Elements in flow coordinate system</div>
+                  <div>• Affected by pan and zoom</div>
+                  <div>• Perfect for annotations</div>
+                  <div>• Custom overlays and markers</div>
                 </div>
               </div>
             </div>
@@ -1775,6 +2407,7 @@ function FlowControls({
           <div>• More configuration options coming soon!</div>
         </CardContent>
       </Card>
+    </div>
     </div>
   )
 }

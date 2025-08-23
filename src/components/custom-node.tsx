@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Handle, Position, NodeProps, NodeResizer } from '@xyflow/react';
+import { Handle, Position, NodeProps, NodeResizer, NodeToolbar } from '@xyflow/react';
 
 interface CustomNodeData {
   label: string;
@@ -26,6 +26,7 @@ interface CustomNodeProps extends NodeProps<CustomNodeData> {
   };
   nodeResizeConfig?: {
     enabled: boolean;
+    isVisible: boolean;
     color: string;
     handleSize: number;
     lineSize: number;
@@ -34,10 +35,28 @@ interface CustomNodeProps extends NodeProps<CustomNodeData> {
     maxWidth: number;
     maxHeight: number;
     keepAspectRatio: boolean;
-    position: 'all' | 'corners' | 'edges';
-    variant: 'handle' | 'line';
     autoScale: boolean;
   };
+  nodeToolbarConfig?: {
+    enabled: boolean;
+    isVisible: boolean;
+    position: 'top' | 'right' | 'bottom' | 'left';
+    align: 'start' | 'center' | 'end';
+    offset: number;
+    buttons: Array<{
+      id: string;
+      label: string;
+      icon: string;
+      action: 'delete' | 'duplicate' | 'edit' | 'info';
+    }>;
+    style: {
+      backgroundColor: string;
+      borderColor: string;
+      borderRadius: number;
+      padding: number;
+    };
+  };
+  onNodeAction?: (nodeId: string, action: string) => void;
 }
 
 export function CustomNode({ 
@@ -62,6 +81,7 @@ export function CustomNode({
   },
   nodeResizeConfig = {
     enabled: false,
+    isVisible: true,
     color: '#3b82f6',
     handleSize: 8,
     lineSize: 2,
@@ -70,10 +90,23 @@ export function CustomNode({
     maxWidth: 500,
     maxHeight: 500,
     keepAspectRatio: false,
-    position: 'corners',
-    variant: 'handle',
     autoScale: true
-  }
+  },
+  nodeToolbarConfig = {
+    enabled: false,
+    isVisible: false,
+    position: 'top' as const,
+    align: 'center' as const,
+    offset: 10,
+    buttons: [],
+    style: {
+      backgroundColor: '#ffffff',
+      borderColor: '#e5e7eb',
+      borderRadius: 6,
+      padding: 4
+    }
+  },
+  onNodeAction
 }: CustomNodeProps) {
   const renderHandles = () => {
     const handles = [];
@@ -233,19 +266,25 @@ export function CustomNode({
 
   const renderResizeControls = () => {
     if (!nodeResizeConfig.enabled) return null;
+    
+    // Show resizer based on visibility setting
+    const shouldShow = nodeResizeConfig.isVisible || selected;
 
-    // NodeResizer is a simpler component that handles all resize positions automatically
+    // NodeResizer handles all resize positions automatically
     return (
       <NodeResizer
+        isVisible={shouldShow}
         color={nodeResizeConfig.color}
         minWidth={nodeResizeConfig.minWidth}
         minHeight={nodeResizeConfig.minHeight}
         maxWidth={nodeResizeConfig.maxWidth}
         maxHeight={nodeResizeConfig.maxHeight}
         keepAspectRatio={nodeResizeConfig.keepAspectRatio}
+        autoScale={nodeResizeConfig.autoScale}
         handleStyle={{
           width: nodeResizeConfig.handleSize,
           height: nodeResizeConfig.handleSize,
+          borderRadius: '50%',
         }}
         lineStyle={{
           borderWidth: nodeResizeConfig.lineSize,
@@ -254,9 +293,73 @@ export function CustomNode({
     );
   };
 
+  const renderToolbar = () => {
+    if (!nodeToolbarConfig.enabled) return null;
+    
+    const shouldShow = nodeToolbarConfig.isVisible || selected;
+
+    return (
+      <NodeToolbar
+        isVisible={shouldShow}
+        position={nodeToolbarConfig.position as any}
+        align={nodeToolbarConfig.align as any}
+        offset={nodeToolbarConfig.offset}
+        style={{
+          backgroundColor: nodeToolbarConfig.style.backgroundColor,
+          border: `1px solid ${nodeToolbarConfig.style.borderColor}`,
+          borderRadius: nodeToolbarConfig.style.borderRadius,
+          padding: nodeToolbarConfig.style.padding,
+          display: 'flex',
+          gap: '4px',
+        }}
+      >
+        {nodeToolbarConfig.buttons.map((button) => (
+          <button
+            key={button.id}
+            onClick={() => {
+              if (onNodeAction) {
+                onNodeAction(id, button.action);
+              } else {
+                // Default actions
+                if (button.action === 'delete') {
+                  alert(`Delete node ${id}`);
+                } else if (button.action === 'duplicate') {
+                  alert(`Duplicate node ${id}`);
+                } else if (button.action === 'edit') {
+                  alert(`Edit node ${id}`);
+                } else {
+                  alert(`${button.label} clicked for node ${id}`);
+                }
+              }
+            }}
+            style={{
+              background: 'transparent',
+              border: 'none',
+              cursor: 'pointer',
+              padding: '4px 8px',
+              borderRadius: '4px',
+              fontSize: '12px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px',
+              transition: 'background 0.2s',
+            }}
+            onMouseEnter={(e) => e.currentTarget.style.background = '#f3f4f6'}
+            onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+            title={button.label}
+          >
+            <span>{button.icon}</span>
+            <span>{button.label}</span>
+          </button>
+        ))}
+      </NodeToolbar>
+    );
+  };
+
   return (
     <>
       {renderResizeControls()}
+      {renderToolbar()}
       <div 
         style={{
           padding: '10px 20px',

@@ -26,12 +26,16 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" className="h-full">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased h-full`}
       >
-        <Header />
-        <ConditionalLayout>{children}</ConditionalLayout>
+        <div className="h-full flex flex-col overflow-hidden">
+          <Header />
+          <div className="flex-1 min-h-0">
+            <ConditionalLayout>{children}</ConditionalLayout>
+          </div>
+        </div>
       </body>
     </html>
   );

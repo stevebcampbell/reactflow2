@@ -24,7 +24,8 @@ export default function HaloMapPage() {
   const [controlsConfig, setControlsConfig] = useState({
     showZoom: true,
     showFitView: true,
-    showInteractive: true
+    showInteractive: true,
+    showResetView: true
   });
   
   // Background state
@@ -101,9 +102,10 @@ export default function HaloMapPage() {
     connectionRadius: 10
   });
   
-  // NodeResizeControl state
+  // NodeResizer state
   const [nodeResizeConfig, setNodeResizeConfig] = useState({
     enabled: false,
+    isVisible: true,
     color: '#3b82f6',
     handleSize: 8,
     lineSize: 2,
@@ -112,13 +114,95 @@ export default function HaloMapPage() {
     maxWidth: 500,
     maxHeight: 500,
     keepAspectRatio: false,
-    position: 'corners' as 'all' | 'corners' | 'edges',
-    variant: 'handle' as 'handle' | 'line',
     autoScale: true
+  });
+  
+  // NodeToolbar state
+  const [nodeToolbarConfig, setNodeToolbarConfig] = useState({
+    enabled: false,
+    isVisible: false,
+    position: 'top' as 'top' | 'right' | 'bottom' | 'left',
+    align: 'center' as 'start' | 'center' | 'end',
+    offset: 10,
+    buttons: [
+      { id: '1', label: 'Delete', icon: '🗑️', action: 'delete' as const },
+      { id: '2', label: 'Copy', icon: '📋', action: 'duplicate' as const },
+      { id: '3', label: 'Edit', icon: '✏️', action: 'edit' as const },
+    ],
+    style: {
+      backgroundColor: '#ffffff',
+      borderColor: '#e5e7eb',
+      borderRadius: 6,
+      padding: 4
+    }
+  });
+  
+  // Handler for viewport portal element movement
+  const handleViewportPortalElementMove = (id: string, x: number, y: number) => {
+    setViewportPortalConfig(prev => ({
+      ...prev,
+      elements: prev.elements.map(el => 
+        el.id === id ? { ...el, x, y } : el
+      )
+    }));
+  };
+
+  // Handler for viewport portal element resize
+  const handleViewportPortalElementResize = (id: string, width: number, height: number) => {
+    setViewportPortalConfig(prev => ({
+      ...prev,
+      elements: prev.elements.map(el => 
+        el.id === id ? { ...el, width, height } : el
+      )
+    }));
+  };
+
+  // ViewportPortal state
+  const [viewportPortalConfig, setViewportPortalConfig] = useState({
+    enabled: false,
+    editMode: false,
+    elements: [
+      {
+        id: '1',
+        x: 20,
+        y: 20,
+        width: 120,
+        height: 40,
+        content: '© 2024 HaloMap',
+        style: {
+          backgroundColor: 'rgba(0, 0, 0, 0.7)',
+          color: '#ffffff',
+          padding: 8,
+          borderRadius: 4,
+          fontSize: 12,
+          opacity: 0.9
+        },
+        type: 'text' as 'text' | 'shape'
+      },
+      {
+        id: '2',
+        x: 20,
+        y: 60,
+        width: 50,
+        height: 50,
+        content: '🧭 N',
+        style: {
+          backgroundColor: 'rgba(255, 255, 255, 0.9)',
+          color: '#000000',
+          padding: 10,
+          borderRadius: 20,
+          fontSize: 16,
+          opacity: 1
+        },
+        type: 'shape' as 'text' | 'shape'
+      }
+    ],
+    showGrid: false,
+    gridSize: 50
   });
 
   return (
-    <div className="h-[calc(100vh-3.5rem)] flex">
+    <div className="h-full flex overflow-hidden">
       {/* Left Sidebar - Flow Controls */}
       <FlowControls 
         controlMode={controlMode} 
@@ -138,7 +222,7 @@ export default function HaloMapPage() {
         panelEnabled={panelEnabled}
         onPanelEnabledChange={setPanelEnabled}
         panelPosition={panelPosition}
-        onPanelPositionChange={(pos) => setPanelPosition(pos as any)}
+        onPanelPositionChange={setPanelPosition}
         baseEdgeConfig={baseEdgeConfig}
         onBaseEdgeConfigChange={setBaseEdgeConfig}
         customControlButtons={customControlButtons}
@@ -151,8 +235,12 @@ export default function HaloMapPage() {
         onHandleConfigChange={setHandleConfig}
         nodeResizeConfig={nodeResizeConfig}
         onNodeResizeConfigChange={setNodeResizeConfig}
+        nodeToolbarConfig={nodeToolbarConfig}
+        onNodeToolbarConfigChange={setNodeToolbarConfig}
+        viewportPortalConfig={viewportPortalConfig}
+        onViewportPortalConfigChange={setViewportPortalConfig}
       />      {/* Main Flow Area */}
-      <div className="flex-1 relative">
+      <div className="flex-1 relative overflow-hidden">
         <div className="absolute inset-0">
           <HaloFlow 
             controlMode={controlMode}
@@ -170,6 +258,10 @@ export default function HaloMapPage() {
             edgeTextConfig={edgeTextConfig}
             handleConfig={handleConfig}
             nodeResizeConfig={nodeResizeConfig}
+            nodeToolbarConfig={nodeToolbarConfig}
+            viewportPortalConfig={viewportPortalConfig}
+            onViewportPortalElementMove={handleViewportPortalElementMove}
+            onViewportPortalElementResize={handleViewportPortalElementResize}
           />
         </div>
 

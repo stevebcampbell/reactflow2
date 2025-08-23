@@ -13,12 +13,12 @@ export function ConditionalLayout({ children }: ConditionalLayoutProps) {
 
   if (isHaloMap) {
     // HaloMap has its own sidebar, so no global sidebar
-    return <main className="min-h-screen">{children}</main>;
+    return <main className="h-full">{children}</main>;
   }
 
   // Other pages use the global sidebar
   return (
-    <div className="flex">
+    <div className="flex h-full">
       <div className="hidden md:block fixed left-0 top-14 h-[calc(100vh-3.5rem)] border-r bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <Sidebar />
       </div>

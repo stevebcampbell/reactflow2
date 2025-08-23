@@ -12,6 +12,7 @@ import {
   applyEdgeChanges,
   addEdge,
   SelectionMode,
+  useReactFlow,
   type Node,
   type Edge,
   type NodeChange,
@@ -21,26 +22,44 @@ import {
 } from '@xyflow/react';
 import { CustomEdge } from './custom-edge';
 import { CustomNode } from './custom-node';
+import { ViewportPortalElement } from './viewport-portal-element';
+import { ViewportGridHelper } from './viewport-grid-helper';
 import '@xyflow/react/dist/style.css';
+
+// Component for Reset View button that needs access to React Flow instance
+function ResetViewButton() {
+  const { setViewport } = useReactFlow();
+  
+  const handleReset = () => {
+    // Reset to default viewport
+    setViewport({ x: 0, y: 0, zoom: 1 }, { duration: 300 });
+  };
+  
+  return (
+    <ControlButton onClick={handleReset} title="Reset View">
+      <span style={{ fontSize: '16px' }}>↺</span>
+    </ControlButton>
+  );
+}
 
 const initialNodes: Node[] = [
   {
     id: 'n1',
     data: { label: 'Node 1' },
-    position: { x: 0, y: 0 },
+    position: { x: 250, y: 100 },
     type: 'input',
     style: { width: 150, height: 50 },
   },
   {
     id: 'n2',
     data: { label: 'Node 2' },
-    position: { x: 100, y: 100 },
+    position: { x: 350, y: 200 },
     style: { width: 150, height: 50 },
   },
   {
     id: 'n3',
     data: { label: 'Node 3' },
-    position: { x: 200, y: 0 },
+    position: { x: 450, y: 100 },
     style: { width: 150, height: 50 },
   },
 ];
@@ -76,6 +95,7 @@ interface FlowProps {
     showZoom: boolean;
     showFitView: boolean;
     showInteractive: boolean;
+    showResetView: boolean;
   };
   backgroundEnabled?: boolean;
   backgroundVariant?: 'dots' | 'lines' | 'cross';
@@ -141,6 +161,7 @@ interface FlowProps {
   };
   nodeResizeConfig?: {
     enabled: boolean;
+    isVisible: boolean;
     color: string;
     handleSize: number;
     lineSize: number;
@@ -149,10 +170,52 @@ interface FlowProps {
     maxWidth: number;
     maxHeight: number;
     keepAspectRatio: boolean;
-    position: 'all' | 'corners' | 'edges';
-    variant: 'handle' | 'line';
     autoScale: boolean;
   };
+  nodeToolbarConfig?: {
+    enabled: boolean;
+    isVisible: boolean;
+    position: 'top' | 'right' | 'bottom' | 'left';
+    align: 'start' | 'center' | 'end';
+    offset: number;
+    buttons: Array<{
+      id: string;
+      label: string;
+      icon: string;
+      action: 'delete' | 'duplicate' | 'edit' | 'info';
+    }>;
+    style: {
+      backgroundColor: string;
+      borderColor: string;
+      borderRadius: number;
+      padding: number;
+    };
+  };
+  viewportPortalConfig?: {
+    enabled: boolean;
+    editMode?: boolean;
+    elements: Array<{
+      id: string;
+      x: number;
+      y: number;
+      width?: number;
+      height?: number;
+      content: string;
+      style: {
+        backgroundColor: string;
+        color: string;
+        padding: number;
+        borderRadius: number;
+        fontSize: number;
+        opacity: number;
+      };
+      type: 'text' | 'shape';
+    }>;
+    showGrid?: boolean;
+    gridSize?: number;
+  };
+  onViewportPortalElementMove?: (id: string, x: number, y: number) => void;
+  onViewportPortalElementResize?: (id: string, width: number, height: number) => void;
 }
 
 const nodeColor = (node: Node) => {
@@ -171,7 +234,7 @@ function Flow({
   miniMapEnabled = false,
   miniMapConfig = { zoomable: true, pannable: true, nodeStrokeWidth: 3 },
   controlsEnabled = true,
-  controlsConfig = { showZoom: true, showFitView: true, showInteractive: true },
+  controlsConfig = { showZoom: true, showFitView: true, showInteractive: true, showResetView: true },
   backgroundEnabled = true,
   backgroundVariant = 'dots',
   panelEnabled = false,
@@ -230,6 +293,7 @@ function Flow({
   },
   nodeResizeConfig = {
     enabled: false,
+    isVisible: true,
     color: '#3b82f6',
     handleSize: 8,
     lineSize: 2,
@@ -238,10 +302,28 @@ function Flow({
     maxWidth: 500,
     maxHeight: 500,
     keepAspectRatio: false,
-    position: 'corners' as const,
-    variant: 'handle' as const,
     autoScale: true
-  }
+  },
+  nodeToolbarConfig = {
+    enabled: false,
+    isVisible: false,
+    position: 'top' as const,
+    align: 'center' as const,
+    offset: 10,
+    buttons: [],
+    style: {
+      backgroundColor: '#ffffff',
+      borderColor: '#e5e7eb',
+      borderRadius: 6,
+      padding: 4
+    }
+  },
+  viewportPortalConfig = {
+    enabled: false,
+    elements: []
+  },
+  onViewportPortalElementMove,
+  onViewportPortalElementResize
 }: FlowProps) {
   const [nodes, setNodes] = useState<Node[]>(
     initialNodes.map(node => ({
@@ -256,18 +338,18 @@ function Flow({
   const nodeTypes = useMemo(
     () => {
       const types: any = {
-        custom: (props: any) => <CustomNode {...props} handleConfig={handleConfig} nodeResizeConfig={nodeResizeConfig} />,
+        custom: (props: any) => <CustomNode {...props} handleConfig={handleConfig} nodeResizeConfig={nodeResizeConfig} nodeToolbarConfig={nodeToolbarConfig} />,
       };
       
-      if (handleConfig.useCustomNodes) {
-        types.input = (props: any) => <CustomNode {...props} handleConfig={handleConfig} nodeResizeConfig={nodeResizeConfig} />;
-        types.default = (props: any) => <CustomNode {...props} handleConfig={handleConfig} nodeResizeConfig={nodeResizeConfig} />;
-        types.output = (props: any) => <CustomNode {...props} handleConfig={handleConfig} nodeResizeConfig={nodeResizeConfig} />;
+      if (handleConfig.useCustomNodes || nodeResizeConfig.enabled || nodeToolbarConfig.enabled) {
+        types.input = (props: any) => <CustomNode {...props} handleConfig={handleConfig} nodeResizeConfig={nodeResizeConfig} nodeToolbarConfig={nodeToolbarConfig} />;
+        types.default = (props: any) => <CustomNode {...props} handleConfig={handleConfig} nodeResizeConfig={nodeResizeConfig} nodeToolbarConfig={nodeToolbarConfig} />;
+        types.output = (props: any) => <CustomNode {...props} handleConfig={handleConfig} nodeResizeConfig={nodeResizeConfig} nodeToolbarConfig={nodeToolbarConfig} />;
       }
       
       return types;
     },
-    [handleConfig, nodeResizeConfig]
+    [handleConfig, nodeResizeConfig, nodeToolbarConfig]
   );
 
   // Custom edge types that use our CustomEdge component
@@ -300,12 +382,14 @@ function Flow({
     );
   }, [baseEdgeConfig]);
 
-  // Update nodes when handleConfig or resize config changes
+  // Update nodes when config changes
   useEffect(() => {
     setNodes(currentNodes => 
       currentNodes.map(node => ({
         ...node,
-        type: handleConfig.useCustomNodes || nodeResizeConfig.enabled ? 'custom' : (node.id === 'n1' ? 'input' : node.id === 'n3' ? 'output' : 'default'),
+        type: (handleConfig.useCustomNodes || nodeResizeConfig.enabled || nodeToolbarConfig.enabled) 
+          ? 'custom' 
+          : (node.id === 'n1' ? 'input' : node.id === 'n3' ? 'output' : 'default'),
         style: { 
           ...node.style, 
           width: node.style?.width || 150, 
@@ -313,7 +397,7 @@ function Flow({
         },
       }))
     );
-  }, [handleConfig.useCustomNodes, nodeResizeConfig.enabled]);
+  }, [handleConfig.useCustomNodes, nodeResizeConfig.enabled, nodeToolbarConfig.enabled]);
 
   const onNodesChange = useCallback(
     (changes: NodeChange[]) =>
@@ -359,7 +443,7 @@ function Flow({
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
         onConnect={onConnect}
-        fitView
+        defaultViewport={{ x: 0, y: 0, zoom: 1 }}
         {...reactFlowProps}
       >
         {backgroundEnabled && (
@@ -431,6 +515,7 @@ function Flow({
                   <span style={{ fontSize: '16px' }}>{btn.icon}</span>
                 </ControlButton>
               ))}
+            {controlsConfig.showResetView && <ResetViewButton />}
           </Controls>
         )}
         
@@ -451,6 +536,22 @@ function Flow({
             </div>
           </Panel>
         )}
+        
+        {/* Viewport Grid Helper */}
+        {viewportPortalConfig.enabled && viewportPortalConfig.showGrid && (
+          <ViewportGridHelper gridSize={viewportPortalConfig.gridSize || 50} />
+        )}
+        
+        {/* Viewport Portal Elements */}
+        {viewportPortalConfig.enabled && viewportPortalConfig.elements.map((element) => (
+          <ViewportPortalElement
+            key={element.id}
+            element={element}
+            onPositionChange={onViewportPortalElementMove || (() => {})}
+            onSizeChange={onViewportPortalElementResize || (() => {})}
+            isEditable={viewportPortalConfig.editMode || false}
+          />
+        ))}
       </ReactFlow>
     </div>
   );
