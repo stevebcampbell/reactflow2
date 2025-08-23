@@ -4,6 +4,7 @@ import React from 'react';
 import {
   BaseEdge,
   EdgeLabelRenderer,
+  EdgeText,
   getBezierPath,
   getStraightPath,
   getSmoothStepPath,
@@ -26,6 +27,22 @@ interface CustomEdgeProps extends EdgeProps<CustomEdgeData> {
     borderRadius: number;
     fontWeight: 'normal' | 'bold';
     interactive: boolean;
+  };
+  edgeTextConfig?: {
+    enabled: boolean;
+    labelStyle: {
+      fill: string;
+      fontSize: number;
+      fontWeight: number;
+    };
+    labelShowBg: boolean;
+    labelBgStyle: {
+      fill: string;
+      fillOpacity: number;
+    };
+    labelBgPadding: [number, number];
+    labelBgBorderRadius: number;
+    position: 'center' | 'start' | 'end';
   };
 }
 
@@ -56,6 +73,22 @@ export function CustomEdge({
     borderRadius: 5,
     fontWeight: 'normal',
     interactive: false,
+  },
+  edgeTextConfig = {
+    enabled: false,
+    labelStyle: {
+      fill: '#000000',
+      fontSize: 12,
+      fontWeight: 400
+    },
+    labelShowBg: true,
+    labelBgStyle: {
+      fill: '#ffffff',
+      fillOpacity: 0.9
+    },
+    labelBgPadding: [4, 4] as [number, number],
+    labelBgBorderRadius: 2,
+    position: 'center' as const
   },
 }: CustomEdgeProps) {
   let path: string;
@@ -101,6 +134,40 @@ export function CustomEdge({
   }
 
   const edgeLabel = label || data?.label;
+
+  // Calculate position based on edgeTextConfig.position
+  let positionX = labelX;
+  let positionY = labelY;
+  
+  if (edgeTextConfig.enabled && edgeTextConfig.position !== 'center') {
+    const ratio = edgeTextConfig.position === 'start' ? 0.25 : 0.75;
+    positionX = sourceX + (targetX - sourceX) * ratio;
+    positionY = sourceY + (targetY - sourceY) * ratio;
+  }
+
+  // If using EdgeText (SVG-based)
+  if (edgeTextConfig.enabled && edgeLabel) {
+    return (
+      <>
+        <BaseEdge
+          id={id}
+          path={path}
+          markerEnd={markerEnd}
+          markerStart={markerStart}
+        />
+        <EdgeText
+          x={positionX}
+          y={positionY}
+          label={edgeLabel}
+          labelStyle={edgeTextConfig.labelStyle}
+          labelShowBg={edgeTextConfig.labelShowBg}
+          labelBgStyle={edgeTextConfig.labelBgStyle}
+          labelBgPadding={edgeTextConfig.labelBgPadding}
+          labelBgBorderRadius={edgeTextConfig.labelBgBorderRadius}
+        />
+      </>
+    );
+  }
 
   // If using HTML labels, render with EdgeLabelRenderer
   if (edgeLabelConfig.useHtmlLabels && edgeLabel) {

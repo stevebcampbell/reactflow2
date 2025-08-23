@@ -64,6 +64,58 @@ export default function HaloMapPage() {
     fontWeight: 'normal' as 'normal' | 'bold',
     interactive: false
   });
+  
+  // EdgeText state
+  const [edgeTextConfig, setEdgeTextConfig] = useState({
+    enabled: false,
+    labelStyle: {
+      fill: '#000000',
+      fontSize: 12,
+      fontWeight: 400
+    },
+    labelShowBg: true,
+    labelBgStyle: {
+      fill: '#ffffff',
+      fillOpacity: 0.9
+    },
+    labelBgPadding: [4, 4] as [number, number],
+    labelBgBorderRadius: 2,
+    position: 'center' as 'center' | 'start' | 'end'
+  });
+  
+  // Handle state
+  const [handleConfig, setHandleConfig] = useState({
+    useCustomNodes: false,
+    handleCount: 2,
+    handlePosition: 'horizontal' as 'horizontal' | 'vertical' | 'all',
+    handleStyle: {
+      width: 10,
+      height: 10,
+      borderRadius: 5,
+      backgroundColor: '#555',
+      borderColor: '#fff',
+      borderWidth: 1
+    },
+    isConnectable: true,
+    connectionMode: 'loose' as 'loose' | 'strict',
+    connectionRadius: 10
+  });
+  
+  // NodeResizeControl state
+  const [nodeResizeConfig, setNodeResizeConfig] = useState({
+    enabled: false,
+    color: '#3b82f6',
+    handleSize: 8,
+    lineSize: 2,
+    minWidth: 50,
+    minHeight: 50,
+    maxWidth: 500,
+    maxHeight: 500,
+    keepAspectRatio: false,
+    position: 'corners' as 'all' | 'corners' | 'edges',
+    variant: 'handle' as 'handle' | 'line',
+    autoScale: true
+  });
 
   return (
     <div className="h-[calc(100vh-3.5rem)] flex">
@@ -93,6 +145,12 @@ export default function HaloMapPage() {
         onCustomControlButtonsChange={setCustomControlButtons}
         edgeLabelConfig={edgeLabelConfig}
         onEdgeLabelConfigChange={setEdgeLabelConfig}
+        edgeTextConfig={edgeTextConfig}
+        onEdgeTextConfigChange={setEdgeTextConfig}
+        handleConfig={handleConfig}
+        onHandleConfigChange={setHandleConfig}
+        nodeResizeConfig={nodeResizeConfig}
+        onNodeResizeConfigChange={setNodeResizeConfig}
       />      {/* Main Flow Area */}
       <div className="flex-1 relative">
         <div className="absolute inset-0">
@@ -109,6 +167,9 @@ export default function HaloMapPage() {
             baseEdgeConfig={baseEdgeConfig}
             customControlButtons={customControlButtons}
             edgeLabelConfig={edgeLabelConfig}
+            edgeTextConfig={edgeTextConfig}
+            handleConfig={handleConfig}
+            nodeResizeConfig={nodeResizeConfig}
           />
         </div>
 

@@ -70,6 +70,55 @@ export interface FlowControlsProps {
     interactive: boolean;
   };
   onEdgeLabelConfigChange?: (config: any) => void;
+  edgeTextConfig?: {
+    enabled: boolean;
+    labelStyle: {
+      fill: string;
+      fontSize: number;
+      fontWeight: number;
+    };
+    labelShowBg: boolean;
+    labelBgStyle: {
+      fill: string;
+      fillOpacity: number;
+    };
+    labelBgPadding: [number, number];
+    labelBgBorderRadius: number;
+    position: 'center' | 'start' | 'end';
+  };
+  onEdgeTextConfigChange?: (config: any) => void;
+  handleConfig?: {
+    useCustomNodes: boolean;
+    handleCount: number;
+    handlePosition: 'horizontal' | 'vertical' | 'all';
+    handleStyle: {
+      width: number;
+      height: number;
+      borderRadius: number;
+      backgroundColor: string;
+      borderColor: string;
+      borderWidth: number;
+    };
+    isConnectable: boolean;
+    connectionMode: 'loose' | 'strict';
+    connectionRadius: number;
+  };
+  onHandleConfigChange?: (config: any) => void;
+  nodeResizeConfig?: {
+    enabled: boolean;
+    color: string;
+    handleSize: number;
+    lineSize: number;
+    minWidth: number;
+    minHeight: number;
+    maxWidth: number;
+    maxHeight: number;
+    keepAspectRatio: boolean;
+    position: 'all' | 'corners' | 'edges';
+    variant: 'handle' | 'line';
+    autoScale: boolean;
+  };
+  onNodeResizeConfigChange?: (config: any) => void;
 }
 
 function FlowControls({ 
@@ -117,7 +166,56 @@ function FlowControls({
     fontWeight: 'normal' as const,
     interactive: false
   },
-  onEdgeLabelConfigChange
+  onEdgeLabelConfigChange,
+  edgeTextConfig = {
+    enabled: false,
+    labelStyle: {
+      fill: '#000000',
+      fontSize: 12,
+      fontWeight: 400
+    },
+    labelShowBg: true,
+    labelBgStyle: {
+      fill: '#ffffff',
+      fillOpacity: 0.9
+    },
+    labelBgPadding: [4, 4] as [number, number],
+    labelBgBorderRadius: 2,
+    position: 'center' as const
+  },
+  onEdgeTextConfigChange,
+  handleConfig = {
+    useCustomNodes: false,
+    handleCount: 2,
+    handlePosition: 'horizontal' as const,
+    handleStyle: {
+      width: 10,
+      height: 10,
+      borderRadius: 5,
+      backgroundColor: '#555',
+      borderColor: '#fff',
+      borderWidth: 1
+    },
+    isConnectable: true,
+    connectionMode: 'loose' as const,
+    connectionRadius: 10
+  },
+  onHandleConfigChange,
+  nodeResizeConfig = {
+    enabled: false,
+    color: '#3b82f6',
+    handleSize: 8,
+    lineSize: 2,
+    minWidth: 50,
+    minHeight: 50,
+    maxWidth: 500,
+    maxHeight: 500,
+    keepAspectRatio: false,
+    position: 'corners' as const,
+    variant: 'handle' as const,
+    autoScale: true
+  },
+  onNodeResizeConfigChange
 }: FlowControlsProps) {
   return (
     <div className="w-80 border-r bg-white dark:bg-slate-900 p-4 space-y-4 h-full overflow-y-auto">
@@ -905,6 +1003,759 @@ function FlowControls({
                   <div>• Supports complex React components</div>
                   <div>• Better for rich content & styling</div>
                   <div>• Positioned above SVG edges</div>
+                </div>
+              </div>
+            </div>
+          </AccordionContent>
+        </AccordionItem>
+
+        {/* EdgeText Configuration Section */}
+        <AccordionItem value="edgetext" className="border rounded-lg bg-white dark:bg-slate-800">
+          <AccordionTrigger className="px-4 py-3 hover:no-underline">
+            <div className="flex items-center gap-3">
+              <span className="text-lg">🔤</span>
+              <div className="flex-1 text-left">
+                <span className="font-semibold text-black dark:text-white">Edge Text</span>
+                <div className="text-xs text-gray-500 dark:text-gray-400">SVG text component for edges</div>
+              </div>
+              {edgeTextConfig.enabled && (
+                <Badge variant="default" className="bg-indigo-600 text-white text-xs">SVG</Badge>
+              )}
+            </div>
+          </AccordionTrigger>
+          <AccordionContent className="px-4 pb-4">
+            <div className="space-y-4">
+              {/* Enable EdgeText */}
+              <div className="flex items-center justify-between">
+                <div>
+                  <Label htmlFor="edgetext-enable" className="text-sm font-medium">Use EdgeText</Label>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    Use SVG-based text component
+                  </p>
+                </div>
+                <Switch
+                  id="edgetext-enable"
+                  checked={edgeTextConfig.enabled}
+                  onCheckedChange={(checked) => onEdgeTextConfigChange?.({...edgeTextConfig, enabled: checked})}
+                />
+              </div>
+
+              {edgeTextConfig.enabled && (
+                <>
+                  {/* Text Position */}
+                  <div className="space-y-2">
+                    <Label className="text-xs font-medium">Label Position</Label>
+                    <RadioGroup 
+                      value={edgeTextConfig.position} 
+                      onValueChange={(value) => onEdgeTextConfigChange?.({...edgeTextConfig, position: value})}
+                    >
+                      <div className="flex gap-3">
+                        <div className="flex items-center space-x-1">
+                          <RadioGroupItem value="start" id="pos-start" />
+                          <Label htmlFor="pos-start" className="text-xs cursor-pointer">Start</Label>
+                        </div>
+                        <div className="flex items-center space-x-1">
+                          <RadioGroupItem value="center" id="pos-center" />
+                          <Label htmlFor="pos-center" className="text-xs cursor-pointer">Center</Label>
+                        </div>
+                        <div className="flex items-center space-x-1">
+                          <RadioGroupItem value="end" id="pos-end" />
+                          <Label htmlFor="pos-end" className="text-xs cursor-pointer">End</Label>
+                        </div>
+                      </div>
+                    </RadioGroup>
+                  </div>
+
+                  {/* Text Styling */}
+                  <div className="space-y-3 border-t pt-3">
+                    <div className="text-xs font-medium text-gray-700 dark:text-gray-300">Text Style</div>
+                    
+                    {/* Text Color */}
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="text-fill" className="text-xs">Text Color</Label>
+                      <div className="flex items-center gap-2">
+                        <input
+                          id="text-fill"
+                          type="color"
+                          value={edgeTextConfig.labelStyle.fill}
+                          onChange={(e) => onEdgeTextConfigChange?.({
+                            ...edgeTextConfig,
+                            labelStyle: { ...edgeTextConfig.labelStyle, fill: e.target.value }
+                          })}
+                          className="w-8 h-8 border rounded cursor-pointer"
+                        />
+                        <input
+                          type="text"
+                          value={edgeTextConfig.labelStyle.fill}
+                          onChange={(e) => onEdgeTextConfigChange?.({
+                            ...edgeTextConfig,
+                            labelStyle: { ...edgeTextConfig.labelStyle, fill: e.target.value }
+                          })}
+                          className="w-20 px-2 py-1 text-xs border rounded bg-white dark:bg-slate-800"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Font Size */}
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="text-size" className="text-xs">Font Size</Label>
+                      <div className="flex items-center gap-2">
+                        <input
+                          id="text-size"
+                          type="range"
+                          min="8"
+                          max="24"
+                          value={edgeTextConfig.labelStyle.fontSize}
+                          onChange={(e) => onEdgeTextConfigChange?.({
+                            ...edgeTextConfig,
+                            labelStyle: { ...edgeTextConfig.labelStyle, fontSize: Number(e.target.value) }
+                          })}
+                          className="w-20 h-1 bg-gray-300 rounded-lg appearance-none cursor-pointer"
+                        />
+                        <span className="text-xs text-gray-600 dark:text-gray-400 w-8">{edgeTextConfig.labelStyle.fontSize}px</span>
+                      </div>
+                    </div>
+
+                    {/* Font Weight */}
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="text-weight" className="text-xs">Font Weight</Label>
+                      <div className="flex items-center gap-2">
+                        <input
+                          id="text-weight"
+                          type="range"
+                          min="100"
+                          max="900"
+                          step="100"
+                          value={edgeTextConfig.labelStyle.fontWeight}
+                          onChange={(e) => onEdgeTextConfigChange?.({
+                            ...edgeTextConfig,
+                            labelStyle: { ...edgeTextConfig.labelStyle, fontWeight: Number(e.target.value) }
+                          })}
+                          className="w-20 h-1 bg-gray-300 rounded-lg appearance-none cursor-pointer"
+                        />
+                        <span className="text-xs text-gray-600 dark:text-gray-400 w-8">{edgeTextConfig.labelStyle.fontWeight}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Background Options */}
+                  <div className="space-y-3 border-t pt-3">
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="text-bg" className="text-xs">Show Background</Label>
+                      <Switch
+                        id="text-bg"
+                        checked={edgeTextConfig.labelShowBg}
+                        onCheckedChange={(checked) => onEdgeTextConfigChange?.({...edgeTextConfig, labelShowBg: checked})}
+                        className="scale-75"
+                      />
+                    </div>
+
+                    {edgeTextConfig.labelShowBg && (
+                      <div className="space-y-3 ml-2">
+                        {/* Background Color */}
+                        <div className="flex items-center justify-between">
+                          <Label htmlFor="bg-fill" className="text-xs">BG Color</Label>
+                          <div className="flex items-center gap-2">
+                            <input
+                              id="bg-fill"
+                              type="color"
+                              value={edgeTextConfig.labelBgStyle.fill}
+                              onChange={(e) => onEdgeTextConfigChange?.({
+                                ...edgeTextConfig,
+                                labelBgStyle: { ...edgeTextConfig.labelBgStyle, fill: e.target.value }
+                              })}
+                              className="w-8 h-8 border rounded cursor-pointer"
+                            />
+                            <input
+                              type="text"
+                              value={edgeTextConfig.labelBgStyle.fill}
+                              onChange={(e) => onEdgeTextConfigChange?.({
+                                ...edgeTextConfig,
+                                labelBgStyle: { ...edgeTextConfig.labelBgStyle, fill: e.target.value }
+                              })}
+                              className="w-20 px-2 py-1 text-xs border rounded bg-white dark:bg-slate-800"
+                            />
+                          </div>
+                        </div>
+
+                        {/* Background Opacity */}
+                        <div className="flex items-center justify-between">
+                          <Label htmlFor="bg-opacity" className="text-xs">BG Opacity</Label>
+                          <div className="flex items-center gap-2">
+                            <input
+                              id="bg-opacity"
+                              type="range"
+                              min="0"
+                              max="1"
+                              step="0.1"
+                              value={edgeTextConfig.labelBgStyle.fillOpacity}
+                              onChange={(e) => onEdgeTextConfigChange?.({
+                                ...edgeTextConfig,
+                                labelBgStyle: { ...edgeTextConfig.labelBgStyle, fillOpacity: Number(e.target.value) }
+                              })}
+                              className="w-20 h-1 bg-gray-300 rounded-lg appearance-none cursor-pointer"
+                            />
+                            <span className="text-xs text-gray-600 dark:text-gray-400 w-8">{edgeTextConfig.labelBgStyle.fillOpacity}</span>
+                          </div>
+                        </div>
+
+                        {/* Padding */}
+                        <div className="flex items-center justify-between">
+                          <Label htmlFor="bg-padding" className="text-xs">Padding</Label>
+                          <div className="flex items-center gap-2">
+                            <input
+                              id="bg-padding-x"
+                              type="number"
+                              min="0"
+                              max="20"
+                              value={edgeTextConfig.labelBgPadding[0]}
+                              onChange={(e) => onEdgeTextConfigChange?.({
+                                ...edgeTextConfig,
+                                labelBgPadding: [Number(e.target.value), edgeTextConfig.labelBgPadding[1]]
+                              })}
+                              className="w-12 px-1 py-1 text-xs border rounded bg-white dark:bg-slate-800"
+                            />
+                            <span className="text-xs">x</span>
+                            <input
+                              id="bg-padding-y"
+                              type="number"
+                              min="0"
+                              max="20"
+                              value={edgeTextConfig.labelBgPadding[1]}
+                              onChange={(e) => onEdgeTextConfigChange?.({
+                                ...edgeTextConfig,
+                                labelBgPadding: [edgeTextConfig.labelBgPadding[0], Number(e.target.value)]
+                              })}
+                              className="w-12 px-1 py-1 text-xs border rounded bg-white dark:bg-slate-800"
+                            />
+                          </div>
+                        </div>
+
+                        {/* Border Radius */}
+                        <div className="flex items-center justify-between">
+                          <Label htmlFor="bg-radius" className="text-xs">Border Radius</Label>
+                          <div className="flex items-center gap-2">
+                            <input
+                              id="bg-radius"
+                              type="range"
+                              min="0"
+                              max="10"
+                              value={edgeTextConfig.labelBgBorderRadius}
+                              onChange={(e) => onEdgeTextConfigChange?.({
+                                ...edgeTextConfig,
+                                labelBgBorderRadius: Number(e.target.value)
+                              })}
+                              className="w-20 h-1 bg-gray-300 rounded-lg appearance-none cursor-pointer"
+                            />
+                            <span className="text-xs text-gray-600 dark:text-gray-400 w-6">{edgeTextConfig.labelBgBorderRadius}</span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </>
+              )}
+
+              {/* Info Box */}
+              <div className="bg-indigo-50 dark:bg-indigo-900/20 p-2 rounded-lg border border-indigo-200 dark:border-indigo-800">
+                <div className="text-xs text-indigo-700 dark:text-indigo-300">
+                  <div className="font-semibold mb-1">EdgeText Features:</div>
+                  <div>• SVG-based text rendering</div>
+                  <div>• Precise positioning control</div>
+                  <div>• Native SVG styling options</div>
+                  <div>• Lightweight & performant</div>
+                </div>
+              </div>
+            </div>
+          </AccordionContent>
+        </AccordionItem>
+
+        {/* Handle Configuration Section */}
+        <AccordionItem value="handle" className="border rounded-lg bg-white dark:bg-slate-800">
+          <AccordionTrigger className="px-4 py-3 hover:no-underline">
+            <div className="flex items-center gap-3">
+              <span className="text-lg">🔗</span>
+              <div className="flex-1 text-left">
+                <span className="font-semibold text-black dark:text-white">Node Handles</span>
+                <div className="text-xs text-gray-500 dark:text-gray-400">Connection points on nodes</div>
+              </div>
+              {handleConfig.useCustomNodes && (
+                <Badge variant="default" className="bg-teal-600 text-white text-xs">Custom</Badge>
+              )}
+            </div>
+          </AccordionTrigger>
+          <AccordionContent className="px-4 pb-4">
+            <div className="space-y-4">
+              {/* Use Custom Nodes Toggle */}
+              <div className="flex items-center justify-between">
+                <div>
+                  <Label htmlFor="use-custom-nodes" className="text-sm font-medium">Use Custom Nodes</Label>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    Enable nodes with custom handles
+                  </p>
+                </div>
+                <Switch
+                  id="use-custom-nodes"
+                  checked={handleConfig.useCustomNodes}
+                  onCheckedChange={(checked) => onHandleConfigChange?.({...handleConfig, useCustomNodes: checked})}
+                />
+              </div>
+
+              {handleConfig.useCustomNodes && (
+                <>
+                  {/* Handle Count */}
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="handle-count" className="text-xs">Handle Count</Label>
+                      <div className="flex items-center gap-2">
+                        <input
+                          id="handle-count"
+                          type="range"
+                          min="1"
+                          max="4"
+                          value={handleConfig.handleCount}
+                          onChange={(e) => onHandleConfigChange?.({...handleConfig, handleCount: Number(e.target.value)})}
+                          className="w-20 h-1 bg-gray-300 rounded-lg appearance-none cursor-pointer"
+                        />
+                        <span className="text-xs text-gray-600 dark:text-gray-400 w-4">{handleConfig.handleCount}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Handle Position Layout */}
+                  <div className="space-y-2">
+                    <Label className="text-xs font-medium">Handle Layout</Label>
+                    <RadioGroup 
+                      value={handleConfig.handlePosition} 
+                      onValueChange={(value) => onHandleConfigChange?.({...handleConfig, handlePosition: value})}
+                    >
+                      <div className="space-y-2">
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="horizontal" id="layout-horizontal" />
+                          <Label htmlFor="layout-horizontal" className="text-xs cursor-pointer">Horizontal (Left/Right)</Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="vertical" id="layout-vertical" />
+                          <Label htmlFor="layout-vertical" className="text-xs cursor-pointer">Vertical (Top/Bottom)</Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="all" id="layout-all" />
+                          <Label htmlFor="layout-all" className="text-xs cursor-pointer">All Sides</Label>
+                        </div>
+                      </div>
+                    </RadioGroup>
+                  </div>
+
+                  {/* Handle Style */}
+                  <div className="space-y-3 border-t pt-3">
+                    <div className="text-xs font-medium text-gray-700 dark:text-gray-300">Handle Style</div>
+                    
+                    {/* Size */}
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="handle-size" className="text-xs">Size</Label>
+                      <div className="flex items-center gap-2">
+                        <input
+                          id="handle-size"
+                          type="range"
+                          min="6"
+                          max="20"
+                          value={handleConfig.handleStyle.width}
+                          onChange={(e) => {
+                            const size = Number(e.target.value);
+                            onHandleConfigChange?.({
+                              ...handleConfig,
+                              handleStyle: { 
+                                ...handleConfig.handleStyle, 
+                                width: size, 
+                                height: size,
+                                borderRadius: size / 2 
+                              }
+                            });
+                          }}
+                          className="w-20 h-1 bg-gray-300 rounded-lg appearance-none cursor-pointer"
+                        />
+                        <span className="text-xs text-gray-600 dark:text-gray-400 w-8">{handleConfig.handleStyle.width}px</span>
+                      </div>
+                    </div>
+
+                    {/* Background Color */}
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="handle-bg" className="text-xs">Color</Label>
+                      <div className="flex items-center gap-2">
+                        <input
+                          id="handle-bg"
+                          type="color"
+                          value={handleConfig.handleStyle.backgroundColor}
+                          onChange={(e) => onHandleConfigChange?.({
+                            ...handleConfig,
+                            handleStyle: { ...handleConfig.handleStyle, backgroundColor: e.target.value }
+                          })}
+                          className="w-8 h-8 border rounded cursor-pointer"
+                        />
+                        <input
+                          type="text"
+                          value={handleConfig.handleStyle.backgroundColor}
+                          onChange={(e) => onHandleConfigChange?.({
+                            ...handleConfig,
+                            handleStyle: { ...handleConfig.handleStyle, backgroundColor: e.target.value }
+                          })}
+                          className="w-20 px-2 py-1 text-xs border rounded bg-white dark:bg-slate-800"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Border Color */}
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="handle-border" className="text-xs">Border</Label>
+                      <div className="flex items-center gap-2">
+                        <input
+                          id="handle-border"
+                          type="color"
+                          value={handleConfig.handleStyle.borderColor}
+                          onChange={(e) => onHandleConfigChange?.({
+                            ...handleConfig,
+                            handleStyle: { ...handleConfig.handleStyle, borderColor: e.target.value }
+                          })}
+                          className="w-8 h-8 border rounded cursor-pointer"
+                        />
+                        <input
+                          type="range"
+                          min="0"
+                          max="3"
+                          value={handleConfig.handleStyle.borderWidth}
+                          onChange={(e) => onHandleConfigChange?.({
+                            ...handleConfig,
+                            handleStyle: { ...handleConfig.handleStyle, borderWidth: Number(e.target.value) }
+                          })}
+                          className="w-12 h-1 bg-gray-300 rounded-lg appearance-none cursor-pointer"
+                        />
+                        <span className="text-xs text-gray-600 dark:text-gray-400">{handleConfig.handleStyle.borderWidth}px</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Connection Settings */}
+                  <div className="space-y-3 border-t pt-3">
+                    <div className="text-xs font-medium text-gray-700 dark:text-gray-300">Connection Settings</div>
+                    
+                    {/* Is Connectable */}
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="handle-connectable" className="text-xs">Connectable</Label>
+                      <Switch
+                        id="handle-connectable"
+                        checked={handleConfig.isConnectable}
+                        onCheckedChange={(checked) => onHandleConfigChange?.({...handleConfig, isConnectable: checked})}
+                        className="scale-75"
+                      />
+                    </div>
+
+                    {/* Connection Mode */}
+                    <div className="flex items-center justify-between">
+                      <Label className="text-xs">Connection Mode</Label>
+                      <RadioGroup 
+                        value={handleConfig.connectionMode} 
+                        onValueChange={(value) => onHandleConfigChange?.({...handleConfig, connectionMode: value as 'loose' | 'strict'})}
+                        className="flex gap-3"
+                      >
+                        <div className="flex items-center space-x-1">
+                          <RadioGroupItem value="loose" id="mode-loose" />
+                          <Label htmlFor="mode-loose" className="text-xs cursor-pointer">Loose</Label>
+                        </div>
+                        <div className="flex items-center space-x-1">
+                          <RadioGroupItem value="strict" id="mode-strict" />
+                          <Label htmlFor="mode-strict" className="text-xs cursor-pointer">Strict</Label>
+                        </div>
+                      </RadioGroup>
+                    </div>
+
+                    {/* Connection Radius */}
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="connection-radius" className="text-xs">Connection Radius</Label>
+                      <div className="flex items-center gap-2">
+                        <input
+                          id="connection-radius"
+                          type="range"
+                          min="5"
+                          max="50"
+                          value={handleConfig.connectionRadius}
+                          onChange={(e) => onHandleConfigChange?.({...handleConfig, connectionRadius: Number(e.target.value)})}
+                          className="w-20 h-1 bg-gray-300 rounded-lg appearance-none cursor-pointer"
+                        />
+                        <span className="text-xs text-gray-600 dark:text-gray-400 w-8">{handleConfig.connectionRadius}px</span>
+                      </div>
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {/* Info Box */}
+              <div className="bg-teal-50 dark:bg-teal-900/20 p-2 rounded-lg border border-teal-200 dark:border-teal-800">
+                <div className="text-xs text-teal-700 dark:text-teal-300">
+                  <div className="font-semibold mb-1">Handle Features:</div>
+                  <div>• Define connection points on nodes</div>
+                  <div>• Control source/target positions</div>
+                  <div>• Customize appearance & behavior</div>
+                  <div>• Validate connections dynamically</div>
+                </div>
+              </div>
+            </div>
+          </AccordionContent>
+        </AccordionItem>
+
+        {/* NodeResizeControl Configuration Section */}
+        <AccordionItem value="noderesize" className="border rounded-lg bg-white dark:bg-slate-800">
+          <AccordionTrigger className="px-4 py-3 hover:no-underline">
+            <div className="flex items-center gap-3">
+              <span className="text-lg">🔄</span>
+              <div className="flex-1 text-left">
+                <span className="font-semibold text-black dark:text-white">Node Resize Control</span>
+                <div className="text-xs text-gray-500 dark:text-gray-400">Resizing handles for nodes</div>
+              </div>
+              {nodeResizeConfig.enabled && (
+                <Badge variant="default" className="bg-cyan-600 text-white text-xs">Resizable</Badge>
+              )}
+            </div>
+          </AccordionTrigger>
+          <AccordionContent className="px-4 pb-4">
+            <div className="space-y-4">
+              {/* Enable Resize */}
+              <div className="flex items-center justify-between">
+                <div>
+                  <Label htmlFor="resize-enable" className="text-sm font-medium">Enable Resizing</Label>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    Allow nodes to be resized
+                  </p>
+                </div>
+                <Switch
+                  id="resize-enable"
+                  checked={nodeResizeConfig.enabled}
+                  onCheckedChange={(checked) => onNodeResizeConfigChange?.({...nodeResizeConfig, enabled: checked})}
+                />
+              </div>
+
+              {nodeResizeConfig.enabled && (
+                <>
+                  {/* Resize Position */}
+                  <div className="space-y-2">
+                    <Label className="text-xs font-medium">Resize Position</Label>
+                    <RadioGroup 
+                      value={nodeResizeConfig.position} 
+                      onValueChange={(value) => onNodeResizeConfigChange?.({...nodeResizeConfig, position: value})}
+                    >
+                      <div className="space-y-2">
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="corners" id="pos-corners" />
+                          <Label htmlFor="pos-corners" className="text-xs cursor-pointer">Corners Only</Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="edges" id="pos-edges" />
+                          <Label htmlFor="pos-edges" className="text-xs cursor-pointer">Edges Only</Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="all" id="pos-all" />
+                          <Label htmlFor="pos-all" className="text-xs cursor-pointer">All (Corners + Edges)</Label>
+                        </div>
+                      </div>
+                    </RadioGroup>
+                  </div>
+
+                  {/* Variant Selection */}
+                  <div className="space-y-2">
+                    <Label className="text-xs font-medium">Control Style</Label>
+                    <RadioGroup 
+                      value={nodeResizeConfig.variant} 
+                      onValueChange={(value) => onNodeResizeConfigChange?.({...nodeResizeConfig, variant: value as 'handle' | 'line'})}
+                      className="flex gap-3"
+                    >
+                      <div className="flex items-center space-x-1">
+                        <RadioGroupItem value="handle" id="variant-handle" />
+                        <Label htmlFor="variant-handle" className="text-xs cursor-pointer">Handle</Label>
+                      </div>
+                      <div className="flex items-center space-x-1">
+                        <RadioGroupItem value="line" id="variant-line" />
+                        <Label htmlFor="variant-line" className="text-xs cursor-pointer">Line</Label>
+                      </div>
+                    </RadioGroup>
+                  </div>
+
+                  {/* Visual Style */}
+                  <div className="space-y-3 border-t pt-3">
+                    <div className="text-xs font-medium text-gray-700 dark:text-gray-300">Visual Style</div>
+                    
+                    {/* Color */}
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="resize-color" className="text-xs">Handle Color</Label>
+                      <div className="flex items-center gap-2">
+                        <input
+                          id="resize-color"
+                          type="color"
+                          value={nodeResizeConfig.color}
+                          onChange={(e) => onNodeResizeConfigChange?.({...nodeResizeConfig, color: e.target.value})}
+                          className="w-8 h-8 border rounded cursor-pointer"
+                        />
+                        <input
+                          type="text"
+                          value={nodeResizeConfig.color}
+                          onChange={(e) => onNodeResizeConfigChange?.({...nodeResizeConfig, color: e.target.value})}
+                          className="w-20 px-2 py-1 text-xs border rounded bg-white dark:bg-slate-800"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Handle Size */}
+                    {nodeResizeConfig.variant === 'handle' && (
+                      <div className="flex items-center justify-between">
+                        <Label htmlFor="handle-size" className="text-xs">Handle Size</Label>
+                        <div className="flex items-center gap-2">
+                          <input
+                            id="handle-size"
+                            type="range"
+                            min="4"
+                            max="16"
+                            value={nodeResizeConfig.handleSize}
+                            onChange={(e) => onNodeResizeConfigChange?.({...nodeResizeConfig, handleSize: Number(e.target.value)})}
+                            className="w-20 h-1 bg-gray-300 rounded-lg appearance-none cursor-pointer"
+                          />
+                          <span className="text-xs text-gray-600 dark:text-gray-400 w-8">{nodeResizeConfig.handleSize}px</span>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Line Size */}
+                    {nodeResizeConfig.variant === 'line' && (
+                      <div className="flex items-center justify-between">
+                        <Label htmlFor="line-size" className="text-xs">Line Width</Label>
+                        <div className="flex items-center gap-2">
+                          <input
+                            id="line-size"
+                            type="range"
+                            min="1"
+                            max="5"
+                            value={nodeResizeConfig.lineSize}
+                            onChange={(e) => onNodeResizeConfigChange?.({...nodeResizeConfig, lineSize: Number(e.target.value)})}
+                            className="w-20 h-1 bg-gray-300 rounded-lg appearance-none cursor-pointer"
+                          />
+                          <span className="text-xs text-gray-600 dark:text-gray-400 w-6">{nodeResizeConfig.lineSize}px</span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Size Constraints */}
+                  <div className="space-y-3 border-t pt-3">
+                    <div className="text-xs font-medium text-gray-700 dark:text-gray-300">Size Constraints</div>
+                    
+                    {/* Min Width */}
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="min-width" className="text-xs">Min Width</Label>
+                      <div className="flex items-center gap-2">
+                        <input
+                          id="min-width"
+                          type="number"
+                          min="10"
+                          max="200"
+                          value={nodeResizeConfig.minWidth}
+                          onChange={(e) => onNodeResizeConfigChange?.({...nodeResizeConfig, minWidth: Number(e.target.value)})}
+                          className="w-16 px-2 py-1 text-xs border rounded bg-white dark:bg-slate-800"
+                        />
+                        <span className="text-xs text-gray-600 dark:text-gray-400">px</span>
+                      </div>
+                    </div>
+
+                    {/* Min Height */}
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="min-height" className="text-xs">Min Height</Label>
+                      <div className="flex items-center gap-2">
+                        <input
+                          id="min-height"
+                          type="number"
+                          min="10"
+                          max="200"
+                          value={nodeResizeConfig.minHeight}
+                          onChange={(e) => onNodeResizeConfigChange?.({...nodeResizeConfig, minHeight: Number(e.target.value)})}
+                          className="w-16 px-2 py-1 text-xs border rounded bg-white dark:bg-slate-800"
+                        />
+                        <span className="text-xs text-gray-600 dark:text-gray-400">px</span>
+                      </div>
+                    </div>
+
+                    {/* Max Width */}
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="max-width" className="text-xs">Max Width</Label>
+                      <div className="flex items-center gap-2">
+                        <input
+                          id="max-width"
+                          type="number"
+                          min="100"
+                          max="1000"
+                          value={nodeResizeConfig.maxWidth}
+                          onChange={(e) => onNodeResizeConfigChange?.({...nodeResizeConfig, maxWidth: Number(e.target.value)})}
+                          className="w-16 px-2 py-1 text-xs border rounded bg-white dark:bg-slate-800"
+                        />
+                        <span className="text-xs text-gray-600 dark:text-gray-400">px</span>
+                      </div>
+                    </div>
+
+                    {/* Max Height */}
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="max-height" className="text-xs">Max Height</Label>
+                      <div className="flex items-center gap-2">
+                        <input
+                          id="max-height"
+                          type="number"
+                          min="100"
+                          max="1000"
+                          value={nodeResizeConfig.maxHeight}
+                          onChange={(e) => onNodeResizeConfigChange?.({...nodeResizeConfig, maxHeight: Number(e.target.value)})}
+                          className="w-16 px-2 py-1 text-xs border rounded bg-white dark:bg-slate-800"
+                        />
+                        <span className="text-xs text-gray-600 dark:text-gray-400">px</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Behavior Options */}
+                  <div className="space-y-3 border-t pt-3">
+                    <div className="text-xs font-medium text-gray-700 dark:text-gray-300">Behavior</div>
+                    
+                    {/* Keep Aspect Ratio */}
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="aspect-ratio" className="text-xs">Keep Aspect Ratio</Label>
+                      <Switch
+                        id="aspect-ratio"
+                        checked={nodeResizeConfig.keepAspectRatio}
+                        onCheckedChange={(checked) => onNodeResizeConfigChange?.({...nodeResizeConfig, keepAspectRatio: checked})}
+                        className="scale-75"
+                      />
+                    </div>
+
+                    {/* Auto Scale */}
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <Label htmlFor="auto-scale" className="text-xs">Auto Scale</Label>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                          Scale controls with zoom
+                        </p>
+                      </div>
+                      <Switch
+                        id="auto-scale"
+                        checked={nodeResizeConfig.autoScale}
+                        onCheckedChange={(checked) => onNodeResizeConfigChange?.({...nodeResizeConfig, autoScale: checked})}
+                        className="scale-75"
+                      />
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {/* Info Box */}
+              <div className="bg-cyan-50 dark:bg-cyan-900/20 p-2 rounded-lg border border-cyan-200 dark:border-cyan-800">
+                <div className="text-xs text-cyan-700 dark:text-cyan-300">
+                  <div className="font-semibold mb-1">NodeResizeControl Features:</div>
+                  <div>• Custom resize UI for nodes</div>
+                  <div>• Corner, edge, or combined controls</div>
+                  <div>• Min/max size constraints</div>
+                  <div>• Aspect ratio preservation</div>
                 </div>
               </div>
             </div>

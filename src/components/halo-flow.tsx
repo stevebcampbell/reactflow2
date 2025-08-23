@@ -20,6 +20,7 @@ import {
   BackgroundVariant,
 } from '@xyflow/react';
 import { CustomEdge } from './custom-edge';
+import { CustomNode } from './custom-node';
 import '@xyflow/react/dist/style.css';
 
 const initialNodes: Node[] = [
@@ -28,16 +29,19 @@ const initialNodes: Node[] = [
     data: { label: 'Node 1' },
     position: { x: 0, y: 0 },
     type: 'input',
+    style: { width: 150, height: 50 },
   },
   {
     id: 'n2',
     data: { label: 'Node 2' },
     position: { x: 100, y: 100 },
+    style: { width: 150, height: 50 },
   },
   {
     id: 'n3',
     data: { label: 'Node 3' },
     position: { x: 200, y: 0 },
+    style: { width: 150, height: 50 },
   },
 ];
 
@@ -103,6 +107,52 @@ interface FlowProps {
     fontWeight: 'normal' | 'bold';
     interactive: boolean;
   };
+  edgeTextConfig?: {
+    enabled: boolean;
+    labelStyle: {
+      fill: string;
+      fontSize: number;
+      fontWeight: number;
+    };
+    labelShowBg: boolean;
+    labelBgStyle: {
+      fill: string;
+      fillOpacity: number;
+    };
+    labelBgPadding: [number, number];
+    labelBgBorderRadius: number;
+    position: 'center' | 'start' | 'end';
+  };
+  handleConfig?: {
+    useCustomNodes: boolean;
+    handleCount: number;
+    handlePosition: 'horizontal' | 'vertical' | 'all';
+    handleStyle: {
+      width: number;
+      height: number;
+      borderRadius: number;
+      backgroundColor: string;
+      borderColor: string;
+      borderWidth: number;
+    };
+    isConnectable: boolean;
+    connectionMode: 'loose' | 'strict';
+    connectionRadius: number;
+  };
+  nodeResizeConfig?: {
+    enabled: boolean;
+    color: string;
+    handleSize: number;
+    lineSize: number;
+    minWidth: number;
+    minHeight: number;
+    maxWidth: number;
+    maxHeight: number;
+    keepAspectRatio: boolean;
+    position: 'all' | 'corners' | 'edges';
+    variant: 'handle' | 'line';
+    autoScale: boolean;
+  };
 }
 
 const nodeColor = (node: Node) => {
@@ -145,20 +195,90 @@ function Flow({
     borderRadius: 5,
     fontWeight: 'normal' as const,
     interactive: false
+  },
+  edgeTextConfig = {
+    enabled: false,
+    labelStyle: {
+      fill: '#000000',
+      fontSize: 12,
+      fontWeight: 400
+    },
+    labelShowBg: true,
+    labelBgStyle: {
+      fill: '#ffffff',
+      fillOpacity: 0.9
+    },
+    labelBgPadding: [4, 4] as [number, number],
+    labelBgBorderRadius: 2,
+    position: 'center' as const
+  },
+  handleConfig = {
+    useCustomNodes: false,
+    handleCount: 2,
+    handlePosition: 'horizontal' as const,
+    handleStyle: {
+      width: 10,
+      height: 10,
+      borderRadius: 5,
+      backgroundColor: '#555',
+      borderColor: '#fff',
+      borderWidth: 1
+    },
+    isConnectable: true,
+    connectionMode: 'loose' as const,
+    connectionRadius: 10
+  },
+  nodeResizeConfig = {
+    enabled: false,
+    color: '#3b82f6',
+    handleSize: 8,
+    lineSize: 2,
+    minWidth: 50,
+    minHeight: 50,
+    maxWidth: 500,
+    maxHeight: 500,
+    keepAspectRatio: false,
+    position: 'corners' as const,
+    variant: 'handle' as const,
+    autoScale: true
   }
 }: FlowProps) {
-  const [nodes, setNodes] = useState<Node[]>(initialNodes);
+  const [nodes, setNodes] = useState<Node[]>(
+    initialNodes.map(node => ({
+      ...node,
+      type: handleConfig.useCustomNodes ? 'custom' : node.type,
+      style: { ...node.style, width: 150, height: 50 },
+    }))
+  );
   const [edges, setEdges] = useState<Edge[]>(initialEdges);
+
+  // Custom node types
+  const nodeTypes = useMemo(
+    () => {
+      const types: any = {
+        custom: (props: any) => <CustomNode {...props} handleConfig={handleConfig} nodeResizeConfig={nodeResizeConfig} />,
+      };
+      
+      if (handleConfig.useCustomNodes) {
+        types.input = (props: any) => <CustomNode {...props} handleConfig={handleConfig} nodeResizeConfig={nodeResizeConfig} />;
+        types.default = (props: any) => <CustomNode {...props} handleConfig={handleConfig} nodeResizeConfig={nodeResizeConfig} />;
+        types.output = (props: any) => <CustomNode {...props} handleConfig={handleConfig} nodeResizeConfig={nodeResizeConfig} />;
+      }
+      
+      return types;
+    },
+    [handleConfig, nodeResizeConfig]
+  );
 
   // Custom edge types that use our CustomEdge component
   const edgeTypes = useMemo(
     () => ({
-      straight: (props: any) => <CustomEdge {...props} edgeLabelConfig={edgeLabelConfig} />,
-      bezier: (props: any) => <CustomEdge {...props} edgeLabelConfig={edgeLabelConfig} />,
-      step: (props: any) => <CustomEdge {...props} edgeLabelConfig={edgeLabelConfig} />,
-      smoothstep: (props: any) => <CustomEdge {...props} edgeLabelConfig={edgeLabelConfig} />,
+      straight: (props: any) => <CustomEdge {...props} edgeLabelConfig={edgeLabelConfig} edgeTextConfig={edgeTextConfig} />,
+      bezier: (props: any) => <CustomEdge {...props} edgeLabelConfig={edgeLabelConfig} edgeTextConfig={edgeTextConfig} />,
+      step: (props: any) => <CustomEdge {...props} edgeLabelConfig={edgeLabelConfig} edgeTextConfig={edgeTextConfig} />,
+      smoothstep: (props: any) => <CustomEdge {...props} edgeLabelConfig={edgeLabelConfig} edgeTextConfig={edgeTextConfig} />,
     }),
-    [edgeLabelConfig]
+    [edgeLabelConfig, edgeTextConfig]
   );
 
   // Update edges when baseEdgeConfig changes
@@ -179,6 +299,21 @@ function Flow({
       }))
     );
   }, [baseEdgeConfig]);
+
+  // Update nodes when handleConfig or resize config changes
+  useEffect(() => {
+    setNodes(currentNodes => 
+      currentNodes.map(node => ({
+        ...node,
+        type: handleConfig.useCustomNodes || nodeResizeConfig.enabled ? 'custom' : (node.id === 'n1' ? 'input' : node.id === 'n3' ? 'output' : 'default'),
+        style: { 
+          ...node.style, 
+          width: node.style?.width || 150, 
+          height: node.style?.height || 50 
+        },
+      }))
+    );
+  }, [handleConfig.useCustomNodes, nodeResizeConfig.enabled]);
 
   const onNodesChange = useCallback(
     (changes: NodeChange[]) =>
@@ -219,6 +354,7 @@ function Flow({
       <ReactFlow
         nodes={nodes}
         edges={edges}
+        nodeTypes={nodeTypes}
         edgeTypes={edgeTypes}
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
