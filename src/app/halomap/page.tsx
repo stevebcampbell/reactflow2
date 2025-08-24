@@ -157,6 +157,13 @@ export default function HaloMapPage() {
     }));
   };
 
+  // Layout state
+  const [layoutConfig, setLayoutConfig] = useState({
+    type: 'mixed' as 'horizontal' | 'vertical' | 'mixed',
+    autoLayout: false,
+    spacing: { x: 150, y: 100 }
+  });
+
   // ViewportPortal state
   const [viewportPortalConfig, setViewportPortalConfig] = useState({
     enabled: false,
@@ -239,6 +246,8 @@ export default function HaloMapPage() {
         onNodeToolbarConfigChange={setNodeToolbarConfig}
         viewportPortalConfig={viewportPortalConfig}
         onViewportPortalConfigChange={setViewportPortalConfig}
+        layoutConfig={layoutConfig}
+        onLayoutConfigChange={setLayoutConfig}
       />      {/* Main Flow Area */}
       <div className="flex-1 relative overflow-hidden">
         <div className="absolute inset-0">
@@ -262,6 +271,7 @@ export default function HaloMapPage() {
             viewportPortalConfig={viewportPortalConfig}
             onViewportPortalElementMove={handleViewportPortalElementMove}
             onViewportPortalElementResize={handleViewportPortalElementResize}
+            layoutConfig={layoutConfig}
           />
         </div>
 

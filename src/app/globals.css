@@ -62,6 +62,51 @@
     position: relative;
   }
   
+  /* React Flow Theme Variables - Light Mode */
+  .react-flow {
+    --xy-edge-stroke-default: #b1b1b7;
+    --xy-edge-stroke-width-default: 2;
+    --xy-edge-stroke-selected-default: #0ea5e9;
+    --xy-connectionline-stroke-default: #b1b1b7;
+    --xy-node-color-default: inherit;
+    --xy-node-border-default: 2px solid #e2e8f0;
+    --xy-node-background-color-default: #ffffff;
+    --xy-node-boxshadow-hover-default: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    --xy-node-boxshadow-selected-default: 0 0 0 2px #0ea5e9;
+    --xy-handle-background-color-default: #555;
+    --xy-handle-border-color-default: #fff;
+    --xy-minimap-background-color-default: #f8fafc;
+    --xy-background-pattern-dots-color-default: #e2e8f0;
+    --xy-background-pattern-line-color-default: #e2e8f0;
+    --xy-background-pattern-cross-color-default: #e2e8f0;
+    --xy-controls-button-background-color-default: #ffffff;
+    --xy-controls-button-background-color-hover-default: #f1f5f9;
+    --xy-controls-button-border-color-default: #e2e8f0;
+    --xy-controls-box-shadow-default: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+  }
+  
+  /* React Flow Theme Variables - Dark Mode */
+  .dark .react-flow {
+    --xy-edge-stroke-default: #4b5563;
+    --xy-edge-stroke-selected-default: #0ea5e9;
+    --xy-connectionline-stroke-default: #4b5563;
+    --xy-node-color-default: #f3f4f6;
+    --xy-node-border-default: 2px solid #374151;
+    --xy-node-background-color-default: #1f2937;
+    --xy-node-boxshadow-hover-default: 0 4px 6px -1px rgba(0, 0, 0, 0.5);
+    --xy-node-boxshadow-selected-default: 0 0 0 2px #0ea5e9;
+    --xy-handle-background-color-default: #6b7280;
+    --xy-handle-border-color-default: #374151;
+    --xy-minimap-background-color-default: #111827;
+    --xy-background-pattern-dots-color-default: #374151;
+    --xy-background-pattern-line-color-default: #374151;
+    --xy-background-pattern-cross-color-default: #374151;
+    --xy-controls-button-background-color-default: #1f2937;
+    --xy-controls-button-background-color-hover-default: #374151;
+    --xy-controls-button-border-color-default: #4b5563;
+    --xy-controls-box-shadow-default: 0 1px 3px 0 rgba(0, 0, 0, 0.5);
+  }
+  
   #__next {
     height: 100%;
   }

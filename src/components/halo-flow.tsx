@@ -13,6 +13,7 @@ import {
   addEdge,
   SelectionMode,
   useReactFlow,
+  Position,
   type Node,
   type Edge,
   type NodeChange,
@@ -52,13 +53,13 @@ const initialNodes: Node[] = [
   },
   {
     id: 'n2',
-    data: { label: 'Node 2' },
+    data: { label: 'Node 2', showInput: true, inputValue: 'Edit me!' },
     position: { x: 350, y: 200 },
     style: { width: 150, height: 50 },
   },
   {
     id: 'n3',
-    data: { label: 'Node 3' },
+    data: { label: 'Node 3', showScrollable: true },
     position: { x: 450, y: 100 },
     style: { width: 150, height: 50 },
   },
@@ -216,6 +217,11 @@ interface FlowProps {
   };
   onViewportPortalElementMove?: (id: string, x: number, y: number) => void;
   onViewportPortalElementResize?: (id: string, width: number, height: number) => void;
+  layoutConfig?: {
+    type: 'horizontal' | 'vertical' | 'mixed';
+    autoLayout: boolean;
+    spacing: { x: number; y: number };
+  };
 }
 
 const nodeColor = (node: Node) => {
@@ -323,7 +329,12 @@ function Flow({
     elements: []
   },
   onViewportPortalElementMove,
-  onViewportPortalElementResize
+  onViewportPortalElementResize,
+  layoutConfig = {
+    type: 'mixed' as const,
+    autoLayout: false,
+    spacing: { x: 150, y: 100 }
+  }
 }: FlowProps) {
   const [nodes, setNodes] = useState<Node[]>(
     initialNodes.map(node => ({
@@ -362,6 +373,44 @@ function Flow({
     }),
     [edgeLabelConfig, edgeTextConfig]
   );
+
+  // Apply layout when layout config changes
+  useEffect(() => {
+    if (!layoutConfig.autoLayout) return;
+    
+    const { type, spacing } = layoutConfig;
+    
+    setNodes(currentNodes => {
+      const layoutNodes = currentNodes.map((node, index) => {
+        if (type === 'horizontal') {
+          // Horizontal layout: left to right
+          return {
+            ...node,
+            position: {
+              x: index * spacing.x,
+              y: Math.floor(index / 3) * spacing.y
+            },
+            sourcePosition: Position.Right,
+            targetPosition: Position.Left
+          };
+        } else if (type === 'vertical') {
+          // Vertical layout: top to bottom
+          return {
+            ...node,
+            position: {
+              x: (index % 3) * spacing.x,
+              y: index * spacing.y
+            },
+            sourcePosition: Position.Bottom,
+            targetPosition: Position.Top
+          };
+        }
+        return node;
+      });
+      
+      return type !== 'mixed' ? layoutNodes : currentNodes;
+    });
+  }, [layoutConfig]); // Only react to layout changes
 
   // Update edges when baseEdgeConfig changes
   useEffect(() => {

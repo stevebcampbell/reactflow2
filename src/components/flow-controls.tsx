@@ -160,6 +160,12 @@ export interface FlowControlsProps {
     gridSize: number;
   };
   onViewportPortalConfigChange?: (config: any) => void;
+  layoutConfig?: {
+    type: 'horizontal' | 'vertical' | 'mixed';
+    autoLayout: boolean;
+    spacing: { x: number; y: number };
+  };
+  onLayoutConfigChange?: (config: any) => void;
 }
 
 function FlowControls({ 
@@ -297,7 +303,9 @@ function FlowControls({
     showGrid: false,
     gridSize: 50
   },
-  onViewportPortalConfigChange
+  onViewportPortalConfigChange,
+  layoutConfig = { type: 'mixed' as const, autoLayout: false, spacing: { x: 150, y: 100 } },
+  onLayoutConfigChange
 }: FlowControlsProps) {
   return (
     <div className="w-80 border-r bg-white dark:bg-slate-900 h-full overflow-y-auto overflow-x-hidden">
@@ -381,6 +389,169 @@ function FlowControls({
                     </div>
                   </div>
                 )}
+              </div>
+            </div>
+          </AccordionContent>
+        </AccordionItem>
+
+        {/* Theme Section */}
+        <AccordionItem value="theme" className="border rounded-lg bg-white dark:bg-slate-800">
+          <AccordionTrigger className="px-4 py-3 hover:no-underline">
+            <div className="flex items-center gap-3">
+              <span className="text-lg">🎨</span>
+              <div className="flex-1 text-left">
+                <span className="font-semibold text-black dark:text-white">Theme</span>
+                <div className="text-xs text-gray-500 dark:text-gray-400">Colors & styling</div>
+              </div>
+            </div>
+          </AccordionTrigger>
+          <AccordionContent className="px-4 pb-4">
+            <div className="space-y-4">
+              <div>
+                <Label className="text-sm font-medium mb-2 block">Color Mode</Label>
+                <RadioGroup defaultValue="system" className="space-y-2">
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="light" id="light" />
+                    <Label htmlFor="light" className="text-xs">Light</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="dark" id="dark" />
+                    <Label htmlFor="dark" className="text-xs">Dark</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="system" id="system" />
+                    <Label htmlFor="system" className="text-xs">System</Label>
+                  </div>
+                </RadioGroup>
+              </div>
+              
+              <div className="space-y-2">
+                <Label className="text-xs">Edge Width</Label>
+                <input
+                  type="range"
+                  min={1}
+                  max={5}
+                  defaultValue={2}
+                  className="w-full"
+                  onChange={(e) => {
+                    document.documentElement.style.setProperty(
+                      '--xy-edge-stroke-width-default',
+                      e.target.value
+                    );
+                  }}
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label className="text-xs">Node Shadow Intensity</Label>
+                <input
+                  type="range"
+                  min={0}
+                  max={20}
+                  defaultValue={10}
+                  className="w-full"
+                  onChange={(e) => {
+                    const opacity = parseInt(e.target.value) / 100;
+                    document.documentElement.style.setProperty(
+                      '--xy-node-boxshadow-hover-default',
+                      `0 4px 6px -1px rgba(0, 0, 0, ${opacity})`
+                    );
+                  }}
+                />
+              </div>
+              
+              <div className="text-xs text-gray-600 dark:text-gray-300 mt-2">
+                <div>• Switch between light/dark themes</div>
+                <div>• Customize edge stroke width</div>
+                <div>• Adjust node shadow effects</div>
+                <div>• Uses CSS variables for theming</div>
+              </div>
+            </div>
+          </AccordionContent>
+        </AccordionItem>
+
+        {/* Layout Section */}
+        <AccordionItem value="layout" className="border rounded-lg bg-white dark:bg-slate-800">
+          <AccordionTrigger className="px-4 py-3 hover:no-underline">
+            <div className="flex items-center gap-3">
+              <span className="text-lg">📐</span>
+              <div className="flex-1 text-left">
+                <span className="font-semibold text-black dark:text-white">Layout</span>
+                <div className="text-xs text-gray-500 dark:text-gray-400">Flow direction & arrangement</div>
+              </div>
+              {layoutConfig.type !== 'mixed' && <Badge variant="default" className="bg-blue-600 text-white text-xs">{layoutConfig.type}</Badge>}
+            </div>
+          </AccordionTrigger>
+          <AccordionContent className="px-4 pb-4">
+            <div className="space-y-4">
+              <div>
+                <Label className="text-sm font-medium mb-2 block">Flow Direction</Label>
+                <RadioGroup value={layoutConfig.type} onValueChange={(value) => onLayoutConfigChange?.({...layoutConfig, type: value as 'horizontal' | 'vertical' | 'mixed'})}>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="horizontal" id="horizontal" />
+                    <Label htmlFor="horizontal" className="text-xs">Horizontal (left to right)</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="vertical" id="vertical" />
+                    <Label htmlFor="vertical" className="text-xs">Vertical (top to bottom)</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="mixed" id="mixed" />
+                    <Label htmlFor="mixed" className="text-xs">Mixed (custom positions)</Label>
+                  </div>
+                </RadioGroup>
+              </div>
+              
+              <div className="flex items-center justify-between">
+                <Label htmlFor="auto-layout" className="text-sm font-medium">Auto Layout</Label>
+                <Switch
+                  id="auto-layout"
+                  checked={layoutConfig.autoLayout}
+                  onCheckedChange={(checked) => onLayoutConfigChange?.({...layoutConfig, autoLayout: checked})}
+                />
+              </div>
+              
+              {layoutConfig.autoLayout && (
+                <div className="space-y-3">
+                  <div className="space-y-2">
+                    <Label className="text-xs">Horizontal Spacing</Label>
+                    <input
+                      type="range"
+                      min={100}
+                      max={300}
+                      value={layoutConfig.spacing.x}
+                      className="w-full"
+                      onChange={(e) => onLayoutConfigChange?.({
+                        ...layoutConfig,
+                        spacing: { ...layoutConfig.spacing, x: parseInt(e.target.value) }
+                      })}
+                    />
+                    <span className="text-xs text-gray-500">{layoutConfig.spacing.x}px</span>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label className="text-xs">Vertical Spacing</Label>
+                    <input
+                      type="range"
+                      min={50}
+                      max={200}
+                      value={layoutConfig.spacing.y}
+                      className="w-full"
+                      onChange={(e) => onLayoutConfigChange?.({
+                        ...layoutConfig,
+                        spacing: { ...layoutConfig.spacing, y: parseInt(e.target.value) }
+                      })}
+                    />
+                    <span className="text-xs text-gray-500">{layoutConfig.spacing.y}px</span>
+                  </div>
+                </div>
+              )}
+              
+              <div className="text-xs text-gray-600 dark:text-gray-300 mt-2">
+                <div>• Horizontal: Nodes flow left to right</div>
+                <div>• Vertical: Nodes flow top to bottom</div>
+                <div>• Mixed: Custom handle positions</div>
+                <div>• Auto Layout: Automatic positioning</div>
               </div>
             </div>
           </AccordionContent>

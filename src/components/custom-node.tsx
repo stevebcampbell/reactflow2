@@ -5,6 +5,9 @@ import { Handle, Position, NodeProps, NodeResizer, NodeToolbar } from '@xyflow/r
 
 interface CustomNodeData {
   label: string;
+  showInput?: boolean;
+  inputValue?: string;
+  showScrollable?: boolean;
 }
 
 interface CustomNodeProps extends NodeProps<CustomNodeData> {
@@ -116,8 +119,8 @@ export function CustomNode({
       width: handleStyle.width,
       height: handleStyle.height,
       borderRadius: handleStyle.borderRadius,
-      backgroundColor: handleStyle.backgroundColor,
-      border: `${handleStyle.borderWidth}px solid ${handleStyle.borderColor}`,
+      backgroundColor: handleStyle.backgroundColor || 'var(--xy-handle-background-color-default)',
+      border: `${handleStyle.borderWidth}px solid ${handleStyle.borderColor || 'var(--xy-handle-border-color-default)'}`,
     };
 
     if (handlePosition === 'horizontal') {
@@ -361,12 +364,13 @@ export function CustomNode({
       {renderResizeControls()}
       {renderToolbar()}
       <div 
+        className={selected ? 'react-flow__node-selected' : ''}
         style={{
           padding: '10px 20px',
           borderRadius: '8px',
-          background: selected ? '#e0f2fe' : '#fff',
-          border: selected ? '2px solid #0284c7' : '2px solid #e2e8f0',
-          color: '#1e293b',
+          background: selected ? '#e0f2fe' : 'var(--xy-node-background-color-default, #fff)',
+          border: selected ? '2px solid #0284c7' : 'var(--xy-node-border-default, 2px solid #e2e8f0)',
+          color: 'var(--xy-node-color-default, #1e293b)',
           minWidth: '150px',
           textAlign: 'center',
           fontSize: '14px',
@@ -374,9 +378,69 @@ export function CustomNode({
           width: '100%',
           height: '100%',
           boxSizing: 'border-box',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '8px',
+          justifyContent: 'center',
         }}
       >
         {data.label}
+        {data.showInput && (
+          <>
+            <input
+              className="nodrag"
+              type="text"
+              placeholder="Type here..."
+              defaultValue={data.inputValue || ''}
+              onChange={(e) => console.log('Input changed:', e.target.value)}
+              onClick={(e) => e.stopPropagation()}
+              style={{
+                width: '100%',
+                padding: '4px 8px',
+                borderRadius: '4px',
+                border: '1px solid #cbd5e1',
+                fontSize: '12px',
+                outline: 'none',
+              }}
+            />
+            <input
+              className="nodrag"
+              type="range"
+              min={0}
+              max={100}
+              defaultValue={50}
+              onChange={(e) => console.log('Range changed:', e.target.value)}
+              style={{
+                width: '100%',
+                cursor: 'pointer',
+              }}
+            />
+          </>
+        )}
+        {data.showScrollable && (
+          <div
+            className="nowheel"
+            style={{
+              width: '100%',
+              height: '60px',
+              overflowY: 'auto',
+              padding: '4px',
+              borderRadius: '4px',
+              border: '1px solid #cbd5e1',
+              fontSize: '11px',
+              textAlign: 'left',
+              backgroundColor: '#f8fafc',
+            }}
+          >
+            <p style={{ margin: 0 }}>📜 Scrollable content here!</p>
+            <p style={{ margin: '4px 0' }}>Line 2: Use mouse wheel to scroll</p>
+            <p style={{ margin: '4px 0' }}>Line 3: Won&apos;t pan the canvas</p>
+            <p style={{ margin: '4px 0' }}>Line 4: Thanks to nowheel class</p>
+            <p style={{ margin: '4px 0' }}>Line 5: Keep scrolling...</p>
+            <p style={{ margin: '4px 0' }}>Line 6: More content</p>
+            <p style={{ margin: '4px 0' }}>Line 7: Even more!</p>
+          </div>
+        )}
       </div>
       {handleConfig.useCustomNodes && renderHandles()}
     </>
