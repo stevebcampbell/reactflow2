@@ -8,7 +8,6 @@ import {
   getBezierPath,
   getStraightPath,
   getSmoothStepPath,
-  getStepPath,
   EdgeProps,
 } from '@xyflow/react';
 
@@ -104,13 +103,14 @@ export function CustomEdge({
       targetY,
     });
   } else if (type === 'step') {
-    [path, labelX, labelY] = getStepPath({
+    [path, labelX, labelY] = getSmoothStepPath({
       sourceX,
       sourceY,
       sourcePosition,
       targetX,
       targetY,
       targetPosition,
+      borderRadius: 0,
     });
   } else if (type === 'smoothstep') {
     [path, labelX, labelY] = getSmoothStepPath({
@@ -133,7 +133,7 @@ export function CustomEdge({
     });
   }
 
-  const edgeLabel = label || data?.label;
+  const edgeLabel = label || (data as CustomEdgeData)?.label;
 
   // Calculate position based on edgeTextConfig.position
   let positionX = labelX;
@@ -158,7 +158,7 @@ export function CustomEdge({
         <EdgeText
           x={positionX}
           y={positionY}
-          label={edgeLabel}
+          label={edgeLabel as string}
           labelStyle={edgeTextConfig.labelStyle}
           labelShowBg={edgeTextConfig.labelShowBg}
           labelBgStyle={edgeTextConfig.labelBgStyle}
@@ -196,7 +196,7 @@ export function CustomEdge({
             className={edgeLabelConfig.interactive ? 'nodrag nopan' : ''}
             onClick={edgeLabelConfig.interactive ? () => alert(`Edge ${id} clicked!`) : undefined}
           >
-            {edgeLabel}
+            {edgeLabel as string}
           </div>
         </EdgeLabelRenderer>
       </>
@@ -208,7 +208,7 @@ export function CustomEdge({
     <BaseEdge
       id={id}
       path={path}
-      label={edgeLabel}
+      label={edgeLabel as string | undefined}
       labelShowBg={labelShowBg}
       labelBgStyle={labelBgStyle}
       labelBgPadding={labelBgPadding}

@@ -1,7 +1,5 @@
 import type { Metadata } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
-import { Header } from '@/components/header';
-import { ConditionalLayout } from '@/components/conditional-layout';
 import './globals.css';
 
 const geistSans = Geist({
@@ -15,9 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'Next.js + Radix UI + React Flow',
-  description:
-    'A modern web application starter with beautiful UI components and flow diagrams',
+  title: 'HaloMap - Interactive React Flow Designer',
+  description: 'A powerful visual flow designer with ELK layout, save/load functionality, and extensive customization options',
 };
 
 export default function RootLayout({
@@ -30,12 +27,7 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased h-full`}
       >
-        <div className="h-full flex flex-col overflow-hidden">
-          <Header />
-          <div className="flex-1 min-h-0">
-            <ConditionalLayout>{children}</ConditionalLayout>
-          </div>
-        </div>
+        {children}
       </body>
     </html>
   );

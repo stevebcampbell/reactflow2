@@ -1,13 +1,16 @@
-"use client"
+'use client';
 
-import { Button } from "@/components/ui/button"
+import { Button } from '@/components/ui/button';
 
 interface FlowControlsProps {
   controlMode: 'default' | 'design';
   onControlModeChange: (mode: 'default' | 'design') => void;
 }
 
-export function FlowControls({ controlMode, onControlModeChange }: FlowControlsProps) {
+export function FlowControls({
+  controlMode,
+  onControlModeChange,
+}: FlowControlsProps) {
   return (
     <div className="w-80 border-r bg-white dark:bg-slate-900 p-4 space-y-4 h-full overflow-y-auto">
       <div>
@@ -29,7 +32,7 @@ export function FlowControls({ controlMode, onControlModeChange }: FlowControlsP
           <span className="mr-2">🎯</span>
           Default Controls
         </Button>
-        
+
         <Button
           onClick={() => onControlModeChange('design')}
           variant={controlMode === 'design' ? 'default' : 'outline'}
@@ -47,5 +50,5 @@ export function FlowControls({ controlMode, onControlModeChange }: FlowControlsP
         </p>
       </div>
     </div>
-  )
+  );
 }

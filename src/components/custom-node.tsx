@@ -1,7 +1,7 @@
 'use client';
 
-import React from 'react';
-import { Handle, Position, NodeProps, NodeResizer, NodeToolbar } from '@xyflow/react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Handle, Position, NodeProps, NodeResizer, NodeToolbar, useReactFlow } from '@xyflow/react';
 
 interface CustomNodeData {
   label: string;
@@ -66,6 +66,7 @@ export function CustomNode({
   data, 
   selected,
   id,
+  style,
   handleConfig = {
     useCustomNodes: false,
     handleCount: 2,
@@ -110,7 +111,35 @@ export function CustomNode({
     }
   },
   onNodeAction
-}: CustomNodeProps) {
+}: CustomNodeProps & { style?: React.CSSProperties }) {
+  const [isEditing, setIsEditing] = useState(false);
+  const [nodeLabel, setNodeLabel] = useState(data.label || 'Node');
+  const inputRef = useRef<HTMLInputElement>(null);
+  const { updateNodeData } = useReactFlow();
+  
+  // Update label when data changes
+  useEffect(() => {
+    setNodeLabel(data.label || 'Node');
+  }, [data.label]);
+
+  useEffect(() => {
+    if (isEditing && inputRef.current) {
+      inputRef.current.focus();
+      inputRef.current.select();
+    }
+  }, [isEditing]);
+
+  const handleLabelEdit = () => {
+    setIsEditing(false);
+    updateNodeData(id, { ...data, label: nodeLabel });
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' || e.key === 'Escape') {
+      handleLabelEdit();
+    }
+  };
+
   const renderHandles = () => {
     const handles = [];
     const { handleCount, handlePosition, handleStyle, isConnectable } = handleConfig;
@@ -124,74 +153,114 @@ export function CustomNode({
     };
 
     if (handlePosition === 'horizontal') {
-      // Left handles (targets)
+      // Left handles - create both source and target at same position
       for (let i = 0; i < Math.ceil(handleCount / 2); i++) {
-        const id = `target-${i}`;
+        const id = `left-${i}`;
         const top = handleCount === 1 ? '50%' : `${((i + 1) * 100) / (Math.ceil(handleCount / 2) + 1)}%`;
+        // Target handle
         handles.push(
           <Handle
-            key={id}
-            id={id}
+            key={`${id}-target`}
+            id={`${id}-target`}
             type="target"
             position={Position.Left}
             style={{ ...style, top }}
             isConnectable={isConnectable}
-            isConnectableStart={handleConfig.connectionMode === 'loose'}
-            isConnectableEnd={isConnectable}
+          />
+        );
+        // Source handle at same position
+        handles.push(
+          <Handle
+            key={`${id}-source`}
+            id={`${id}-source`}
+            type="source"
+            position={Position.Left}
+            style={{ ...style, top }}
+            isConnectable={isConnectable}
           />
         );
       }
       
-      // Right handles (sources)
+      // Right handles - create both source and target at same position
       for (let i = 0; i < Math.floor(handleCount / 2); i++) {
-        const id = `source-${i}`;
+        const id = `right-${i}`;
         const top = handleCount === 1 ? '50%' : `${((i + 1) * 100) / (Math.floor(handleCount / 2) + 1)}%`;
+        // Target handle
         handles.push(
           <Handle
-            key={id}
-            id={id}
+            key={`${id}-target`}
+            id={`${id}-target`}
+            type="target"
+            position={Position.Right}
+            style={{ ...style, top }}
+            isConnectable={isConnectable}
+          />
+        );
+        // Source handle at same position
+        handles.push(
+          <Handle
+            key={`${id}-source`}
+            id={`${id}-source`}
             type="source"
             position={Position.Right}
             style={{ ...style, top }}
             isConnectable={isConnectable}
-            isConnectableStart={isConnectable}
-            isConnectableEnd={handleConfig.connectionMode === 'loose'}
           />
         );
       }
     } else if (handlePosition === 'vertical') {
-      // Top handles (targets)
+      // Top handles - create both source and target at same position
       for (let i = 0; i < Math.ceil(handleCount / 2); i++) {
-        const id = `target-${i}`;
+        const id = `top-${i}`;
         const left = handleCount === 1 ? '50%' : `${((i + 1) * 100) / (Math.ceil(handleCount / 2) + 1)}%`;
+        // Target handle
         handles.push(
           <Handle
-            key={id}
-            id={id}
+            key={`${id}-target`}
+            id={`${id}-target`}
             type="target"
             position={Position.Top}
             style={{ ...style, left }}
             isConnectable={isConnectable}
-            isConnectableStart={handleConfig.connectionMode === 'loose'}
-            isConnectableEnd={isConnectable}
+          />
+        );
+        // Source handle at same position
+        handles.push(
+          <Handle
+            key={`${id}-source`}
+            id={`${id}-source`}
+            type="source"
+            position={Position.Top}
+            style={{ ...style, left }}
+            isConnectable={isConnectable}
           />
         );
       }
       
-      // Bottom handles (sources)
+      // Bottom handles - create both source and target at same position
       for (let i = 0; i < Math.floor(handleCount / 2); i++) {
-        const id = `source-${i}`;
+        const id = `bottom-${i}`;
         const left = handleCount === 1 ? '50%' : `${((i + 1) * 100) / (Math.floor(handleCount / 2) + 1)}%`;
+        // Target handle
         handles.push(
           <Handle
-            key={id}
-            id={id}
+            key={`${id}-target`}
+            id={`${id}-target`}
+            type="target"
+            position={Position.Bottom}
+            style={{ ...style, left }}
+            isConnectable={isConnectable}
+          />
+        );
+        // Source handle at same position
+        handles.push(
+          <Handle
+            key={`${id}-source`}
+            id={`${id}-source`}
             type="source"
             position={Position.Bottom}
             style={{ ...style, left }}
             isConnectable={isConnectable}
-            isConnectableStart={isConnectable}
-            isConnectableEnd={handleConfig.connectionMode === 'loose'}
           />
         );
       }
@@ -199,15 +268,25 @@ export function CustomNode({
       // All sides
       const perSide = Math.max(1, Math.floor(handleCount / 4));
       
-      // Top
+      // Top - create both source and target at same position
       for (let i = 0; i < perSide; i++) {
         const id = `top-${i}`;
         const left = perSide === 1 ? '50%' : `${((i + 1) * 100) / (perSide + 1)}%`;
         handles.push(
           <Handle
-            key={id}
-            id={id}
+            key={`${id}-target`}
+            id={`${id}-target`}
             type="target"
+            position={Position.Top}
+            style={{ ...style, left }}
+            isConnectable={isConnectable}
+          />
+        );
+        handles.push(
+          <Handle
+            key={`${id}-source`}
+            id={`${id}-source`}
+            type="source"
             position={Position.Top}
             style={{ ...style, left }}
             isConnectable={isConnectable}
@@ -215,14 +294,24 @@ export function CustomNode({
         );
       }
       
-      // Right
+      // Right - create both source and target at same position
       for (let i = 0; i < perSide; i++) {
         const id = `right-${i}`;
         const top = perSide === 1 ? '50%' : `${((i + 1) * 100) / (perSide + 1)}%`;
         handles.push(
           <Handle
-            key={id}
-            id={id}
+            key={`${id}-target`}
+            id={`${id}-target`}
+            type="target"
+            position={Position.Right}
+            style={{ ...style, top }}
+            isConnectable={isConnectable}
+          />
+        );
+        handles.push(
+          <Handle
+            key={`${id}-source`}
+            id={`${id}-source`}
             type="source"
             position={Position.Right}
             style={{ ...style, top }}
@@ -231,14 +320,24 @@ export function CustomNode({
         );
       }
       
-      // Bottom
+      // Bottom - create both source and target at same position
       for (let i = 0; i < perSide; i++) {
         const id = `bottom-${i}`;
         const left = perSide === 1 ? '50%' : `${((i + 1) * 100) / (perSide + 1)}%`;
         handles.push(
           <Handle
-            key={id}
-            id={id}
+            key={`${id}-target`}
+            id={`${id}-target`}
+            type="target"
+            position={Position.Bottom}
+            style={{ ...style, left }}
+            isConnectable={isConnectable}
+          />
+        );
+        handles.push(
+          <Handle
+            key={`${id}-source`}
+            id={`${id}-source`}
             type="source"
             position={Position.Bottom}
             style={{ ...style, left }}
@@ -247,15 +346,25 @@ export function CustomNode({
         );
       }
       
-      // Left
+      // Left - create both source and target at same position
       for (let i = 0; i < perSide; i++) {
         const id = `left-${i}`;
         const top = perSide === 1 ? '50%' : `${((i + 1) * 100) / (perSide + 1)}%`;
         handles.push(
           <Handle
-            key={id}
-            id={id}
+            key={`${id}-target`}
+            id={`${id}-target`}
             type="target"
+            position={Position.Left}
+            style={{ ...style, top }}
+            isConnectable={isConnectable}
+          />
+        );
+        handles.push(
+          <Handle
+            key={`${id}-source`}
+            id={`${id}-source`}
+            type="source"
             position={Position.Left}
             style={{ ...style, top }}
             isConnectable={isConnectable}
@@ -363,86 +472,62 @@ export function CustomNode({
     <>
       {renderResizeControls()}
       {renderToolbar()}
-      <div 
-        className={selected ? 'react-flow__node-selected' : ''}
-        style={{
-          padding: '10px 20px',
-          borderRadius: '8px',
-          background: selected ? '#e0f2fe' : 'var(--xy-node-background-color-default, #fff)',
-          border: selected ? '2px solid #0284c7' : 'var(--xy-node-border-default, 2px solid #e2e8f0)',
-          color: 'var(--xy-node-color-default, #1e293b)',
-          minWidth: '150px',
-          textAlign: 'center',
-          fontSize: '14px',
-          fontWeight: 500,
-          width: '100%',
-          height: '100%',
-          boxSizing: 'border-box',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '8px',
-          justifyContent: 'center',
-        }}
-      >
-        {data.label}
-        {data.showInput && (
-          <>
-            <input
-              className="nodrag"
-              type="text"
-              placeholder="Type here..."
-              defaultValue={data.inputValue || ''}
-              onChange={(e) => console.log('Input changed:', e.target.value)}
-              onClick={(e) => e.stopPropagation()}
-              style={{
-                width: '100%',
-                padding: '4px 8px',
-                borderRadius: '4px',
-                border: '1px solid #cbd5e1',
-                fontSize: '12px',
-                outline: 'none',
-              }}
-            />
-            <input
-              className="nodrag"
-              type="range"
-              min={0}
-              max={100}
-              defaultValue={50}
-              onChange={(e) => console.log('Range changed:', e.target.value)}
-              style={{
-                width: '100%',
-                cursor: 'pointer',
-              }}
-            />
-          </>
-        )}
-        {data.showScrollable && (
-          <div
-            className="nowheel"
+      {isEditing ? (
+          <input
+            ref={inputRef}
+            className="nodrag"
+            type="text"
+            value={nodeLabel}
+            onChange={(e) => setNodeLabel(e.target.value)}
+            onBlur={handleLabelEdit}
+            onKeyDown={handleKeyDown}
             style={{
-              width: '100%',
-              height: '60px',
-              overflowY: 'auto',
-              padding: '4px',
+              background: 'transparent',
+              border: '1px solid #0284c7',
               borderRadius: '4px',
-              border: '1px solid #cbd5e1',
-              fontSize: '11px',
-              textAlign: 'left',
-              backgroundColor: '#f8fafc',
+              padding: '8px 12px',
+              fontSize: '14px',
+              fontWeight: 500,
+              textAlign: 'center',
+              outline: 'none',
+              width: 'calc(100% - 20px)',
+              boxSizing: 'border-box'
             }}
-          >
-            <p style={{ margin: 0 }}>📜 Scrollable content here!</p>
-            <p style={{ margin: '4px 0' }}>Line 2: Use mouse wheel to scroll</p>
-            <p style={{ margin: '4px 0' }}>Line 3: Won&apos;t pan the canvas</p>
-            <p style={{ margin: '4px 0' }}>Line 4: Thanks to nowheel class</p>
-            <p style={{ margin: '4px 0' }}>Line 5: Keep scrolling...</p>
-            <p style={{ margin: '4px 0' }}>Line 6: More content</p>
-            <p style={{ margin: '4px 0' }}>Line 7: Even more!</p>
-          </div>
-        )}
-      </div>
-      {handleConfig.useCustomNodes && renderHandles()}
+          />
+      ) : (
+        <div
+          onDoubleClick={() => setIsEditing(true)}
+          style={{ 
+            cursor: 'text', 
+            userSelect: 'none',
+            padding: '10px 20px',
+            fontSize: '14px',
+            fontWeight: 500,
+            textAlign: 'center',
+            width: '100%',
+            boxSizing: 'border-box'
+          }}
+        >
+          {nodeLabel}
+        </div>
+      )}
+      {handleConfig.useCustomNodes ? renderHandles() : (
+        <>
+          {/* Default handles for connection even when custom handles are off */}
+          <Handle
+            type="target"
+            position={Position.Top}
+            style={{ background: '#555', width: 8, height: 8 }}
+            isConnectable={true}
+          />
+          <Handle
+            type="source"
+            position={Position.Bottom}
+            style={{ background: '#555', width: 8, height: 8 }}
+            isConnectable={true}
+          />
+        </>
+      )}
     </>
   );
 }

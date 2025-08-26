@@ -1,5 +1,5 @@
-"use client"
+'use client';
 
 export function FlowControls() {
-  return <div>Test FlowControls</div>
+  return <div>Test FlowControls</div>;
 }

@@ -3,6 +3,7 @@
 import { useState, useCallback, useEffect, useMemo } from 'react';
 import {
   ReactFlow,
+  ReactFlowProvider,
   Controls,
   ControlButton,
   Background,
@@ -49,19 +50,37 @@ const initialNodes: Node[] = [
     data: { label: 'Node 1' },
     position: { x: 250, y: 100 },
     type: 'input',
-    style: { width: 150, height: 50 },
+    style: { 
+      width: 150, 
+      height: 50,
+      backgroundColor: '#ffffff',
+      border: '2px solid #e2e8f0',
+      borderRadius: '8px'
+    },
   },
   {
     id: 'n2',
-    data: { label: 'Node 2', showInput: true, inputValue: 'Edit me!' },
+    data: { label: 'Node 2' },
     position: { x: 350, y: 200 },
-    style: { width: 150, height: 50 },
+    style: { 
+      width: 150, 
+      height: 50,
+      backgroundColor: '#ffffff',
+      border: '2px solid #e2e8f0',
+      borderRadius: '8px'
+    },
   },
   {
     id: 'n3',
-    data: { label: 'Node 3', showScrollable: true },
+    data: { label: 'Node 3' },
     position: { x: 450, y: 100 },
-    style: { width: 150, height: 50 },
+    style: { 
+      width: 150, 
+      height: 50,
+      backgroundColor: '#ffffff',
+      border: '2px solid #e2e8f0',
+      borderRadius: '8px'
+    },
   },
 ];
 
@@ -86,6 +105,8 @@ const designToolPanOnDrag = [1, 2];
 interface FlowProps {
   controlMode?: 'default' | 'design';
   miniMapEnabled?: boolean;
+  loadedData?: { nodes: any[], edges: any[], viewport?: any };
+  onFlowDataChange?: (data: { nodes: any[], edges: any[], viewport?: any }) => void;
   miniMapConfig?: {
     zoomable: boolean;
     pannable: boolean;
@@ -235,7 +256,7 @@ const nodeColor = (node: Node) => {
   }
 };
 
-function Flow({ 
+function FlowInner({ 
   controlMode = 'default',
   miniMapEnabled = false,
   miniMapConfig = { zoomable: true, pannable: true, nodeStrokeWidth: 3 },
@@ -334,32 +355,23 @@ function Flow({
     type: 'mixed' as const,
     autoLayout: false,
     spacing: { x: 150, y: 100 }
-  }
+  },
+  loadedData,
+  onFlowDataChange
 }: FlowProps) {
   const [nodes, setNodes] = useState<Node[]>(
-    initialNodes.map(node => ({
-      ...node,
-      type: handleConfig.useCustomNodes ? 'custom' : node.type,
-      style: { ...node.style, width: 150, height: 50 },
-    }))
+    loadedData?.nodes?.length ? loadedData.nodes : initialNodes
   );
-  const [edges, setEdges] = useState<Edge[]>(initialEdges);
+  const [edges, setEdges] = useState<Edge[]>(loadedData?.edges?.length ? loadedData.edges : initialEdges);
 
-  // Custom node types
+  // Custom node types - Always allow editing via CustomNode for all types
   const nodeTypes = useMemo(
-    () => {
-      const types: any = {
-        custom: (props: any) => <CustomNode {...props} handleConfig={handleConfig} nodeResizeConfig={nodeResizeConfig} nodeToolbarConfig={nodeToolbarConfig} />,
-      };
-      
-      if (handleConfig.useCustomNodes || nodeResizeConfig.enabled || nodeToolbarConfig.enabled) {
-        types.input = (props: any) => <CustomNode {...props} handleConfig={handleConfig} nodeResizeConfig={nodeResizeConfig} nodeToolbarConfig={nodeToolbarConfig} />;
-        types.default = (props: any) => <CustomNode {...props} handleConfig={handleConfig} nodeResizeConfig={nodeResizeConfig} nodeToolbarConfig={nodeToolbarConfig} />;
-        types.output = (props: any) => <CustomNode {...props} handleConfig={handleConfig} nodeResizeConfig={nodeResizeConfig} nodeToolbarConfig={nodeToolbarConfig} />;
-      }
-      
-      return types;
-    },
+    () => ({
+      custom: (props: any) => <CustomNode {...props} handleConfig={handleConfig} nodeResizeConfig={nodeResizeConfig} nodeToolbarConfig={nodeToolbarConfig} />,
+      input: (props: any) => <CustomNode {...props} handleConfig={handleConfig} nodeResizeConfig={nodeResizeConfig} nodeToolbarConfig={nodeToolbarConfig} />,
+      default: (props: any) => <CustomNode {...props} handleConfig={handleConfig} nodeResizeConfig={nodeResizeConfig} nodeToolbarConfig={nodeToolbarConfig} />,
+      output: (props: any) => <CustomNode {...props} handleConfig={handleConfig} nodeResizeConfig={nodeResizeConfig} nodeToolbarConfig={nodeToolbarConfig} />,
+    }),
     [handleConfig, nodeResizeConfig, nodeToolbarConfig]
   );
 
@@ -450,7 +462,31 @@ function Flow({
 
   const onNodesChange = useCallback(
     (changes: NodeChange[]) =>
-      setNodes((nds) => applyNodeChanges(changes, nds)),
+      setNodes((nds) => {
+        let updatedNodes = applyNodeChanges(changes, nds);
+        
+        // Check for dimension changes (resize events)
+        changes.forEach(change => {
+          if (change.type === 'dimensions' && change.dimensions) {
+            updatedNodes = updatedNodes.map(node => 
+              node.id === change.id 
+                ? { 
+                    ...node, 
+                    width: change.dimensions!.width,
+                    height: change.dimensions!.height,
+                    style: {
+                      ...(node as any).style,
+                      width: change.dimensions!.width,
+                      height: change.dimensions!.height
+                    }
+                  }
+                : node
+            );
+          }
+        });
+        
+        return updatedNodes;
+      }),
     []
   );
   const onEdgesChange = useCallback(
@@ -461,6 +497,50 @@ function Flow({
   const onConnect = useCallback(
     (params: Connection) => setEdges((eds) => addEdge(params, eds)),
     []
+  );
+
+  // Allow any-to-any connections except self-connections
+  const isValidConnection = useCallback(
+    (connection: Edge | Connection) => {
+      // Prevent connecting a node to itself
+      return connection.source !== connection.target;
+    },
+    []
+  );
+
+  // Get screenToFlowPosition from React Flow
+  const { screenToFlowPosition } = useReactFlow();
+
+  // Add new node on double-click on the pane
+  const onPaneClick = useCallback(
+    (event: React.MouseEvent) => {
+      // Only add node on double-click
+      if (event.detail === 2) {
+        event.preventDefault();
+        
+        // Use screenToFlowPosition for correct positioning
+        const position = screenToFlowPosition({
+          x: event.clientX,
+          y: event.clientY,
+        });
+
+        const newNode: Node = {
+          id: `node-${Date.now()}`,
+          position,
+          data: { label: `New Node ${nodes.length + 1}` },
+          style: { 
+            width: 150, 
+            height: 50,
+            backgroundColor: '#ffffff',
+            border: '2px solid #e2e8f0',
+            borderRadius: '8px'
+          }
+        };
+
+        setNodes((nds) => nds.concat(newNode));
+      }
+    },
+    [nodes.length, screenToFlowPosition]
   );
 
   const getBackgroundVariant = () => {
@@ -482,6 +562,26 @@ function Flow({
     selectionMode: SelectionMode.Partial,
   } : {};
 
+  // Handle loaded data changes
+  useEffect(() => {
+    if (loadedData?.nodes?.length) {
+      setNodes(loadedData.nodes);
+    }
+    if (loadedData?.edges?.length) {
+      setEdges(loadedData.edges);
+    }
+  }, [loadedData]);
+  
+  // Update parent when nodes/edges change (debounced to prevent loops)
+  useEffect(() => {
+    if (onFlowDataChange) {
+      const timer = setTimeout(() => {
+        onFlowDataChange({ nodes, edges });
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [nodes, edges, onFlowDataChange]);
+
   return (
     <div style={{ height: '100%' }}>
       <ReactFlow
@@ -492,7 +592,11 @@ function Flow({
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
         onConnect={onConnect}
+        isValidConnection={isValidConnection}
+        onPaneClick={onPaneClick}
         defaultViewport={{ x: 0, y: 0, zoom: 1 }}
+        connectOnClick={false}
+        nodesConnectable={true}
         {...reactFlowProps}
       >
         {backgroundEnabled && (
@@ -603,6 +707,15 @@ function Flow({
         ))}
       </ReactFlow>
     </div>
+  );
+}
+
+// Wrapper component with ReactFlowProvider
+function Flow(props: FlowProps) {
+  return (
+    <ReactFlowProvider>
+      <FlowInner {...props} />
+    </ReactFlowProvider>
   );
 }
 
